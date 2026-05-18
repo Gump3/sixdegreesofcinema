@@ -80,6 +80,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Six Degrees of Cinema" },
+      { name: "description", content: "This application enables cloud deployment and provides a movie trivia game with a global leaderboard." },
+      { property: "og:description", content: "This application enables cloud deployment and provides a movie trivia game with a global leaderboard." },
+      { name: "twitter:description", content: "This application enables cloud deployment and provides a movie trivia game with a global leaderboard." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
