@@ -406,6 +406,7 @@ export async function findShortestPath(
         .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
         .slice(0, personMovieCap);
       for (const m of combined) {
+        if (excludeMovies.has(m.id)) continue;
         const mKey = nodeKey({ kind: "movie", id: m.id });
         if (parents.has(mKey)) continue;
         parents.set(mKey, { node: { kind: "movie", id: m.id }, via: p });
