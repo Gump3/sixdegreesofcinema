@@ -355,6 +355,7 @@ export async function findShortestPath(
     movieCastCap?: number;
     personMovieCap?: number;
     excludePersonIds?: Set<number>;
+    excludeMovieIds?: Set<number>;
     budgetMs?: number;
     maxTmdbCalls?: number;
   } = {},
@@ -366,6 +367,7 @@ export async function findShortestPath(
   const movieCastCap = opts.movieCastCap ?? 12;
   const personMovieCap = opts.personMovieCap ?? 20;
   const exclude = opts.excludePersonIds ?? new Set<number>();
+  const excludeMovies = opts.excludeMovieIds ?? new Set<number>();
   const deadline = Date.now() + (opts.budgetMs ?? 22_000);
   const startCalls = tmdbCallsThisProcess;
   const maxCalls = opts.maxTmdbCalls ?? 400;
