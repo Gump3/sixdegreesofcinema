@@ -284,10 +284,42 @@ export const validateChain = createServerFn({ method: "POST" })
     const hintPenalty = data.hintsUsed * (isHardMode ? 20 : 10);
     const score = Math.max(0, base + degreeBonus - hintPenalty);
 
-    // Compute alternates lazily (cache to row)
+    // Return cached shortest path if already computed; otherwise client can fetch
+    // it separately via getAlternatesFn so we don't block this response with a
+    // potentially-minutes-long BFS (which causes upstream request timeouts).
+    const shortest = game.data.shortest_path as unknown as ChainStep[] | null;
+    const alternates = game.data.alternates as unknown as ChainStep[][] | null;
+
+    return {
+      valid: true,
+      degrees,
+      score,
+      shortestPath: shortest,
+      alternates: alternates ?? [],
+      alternatesPending: !shortest,
+      debug: readDebugCounters(),
+    };
+  });
+
+// ============== getAlternatesFn ==============
+// Heavy BFS lives behind its own endpoint so the validate call returns instantly.
+// The client calls this after a successful submit; it may take a while on first run.
+export const getAlternatesFn = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ gameId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const game = await supabaseAdmin
+      .from("games")
+      .select("actor_a, actor_b, shortest_path, alternates")
+      .eq("id", data.gameId)
+      .single();
+    if (game.error || !game.data) throw new Error("Game not found");
+
     let shortest = game.data.shortest_path as unknown as ChainStep[] | null;
     let alternates = game.data.alternates as unknown as ChainStep[][] | null;
+
     if (!shortest) {
+      const actorA = game.data.actor_a as unknown as ActorRecord;
+      const actorB = game.data.actor_b as unknown as ActorRecord;
       shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 6 });
       alternates = shortest ? await findAlternatePaths(actorA.id, actorB.id, 2, shortest) : [];
       await supabaseAdmin
@@ -297,11 +329,9 @@ export const validateChain = createServerFn({ method: "POST" })
     }
 
     return {
-      valid: true,
-      degrees,
-      score,
       shortestPath: shortest,
       alternates: alternates ?? [],
+      degrees: shortest ? shortest.filter((s) => s.kind === "movie").length : null,
       debug: readDebugCounters(),
     };
   });
