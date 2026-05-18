@@ -176,6 +176,12 @@ function GameScreen() {
           ...history,
         ].slice(0, 50));
 
+        // Streak: solved → increment, await next puzzle (Continue button).
+        if (isStreakGame) {
+          streak.recordSolved(null);
+        }
+
+
         // Kick off alternates BFS separately so it doesn't block validation.
         if (("alternatesPending" in res && res.alternatesPending) || !res.shortestPath) {
           setAlternatesLoading(true);
