@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Film,
   Flag,
+  Flame,
   Lightbulb,
   Loader2,
   Plus,
