@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Film, Sparkles, Loader2 } from "lucide-react";
 import { createGame } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { GENERATION_META, type Generation } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
+
 
 type Mode = "noob" | "buff";
 type Difficulty = "easy" | "medium" | "hard";
