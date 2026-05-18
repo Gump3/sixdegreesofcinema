@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Film, Sparkles, Loader2, CalendarDays } from "lucide-react";
+import { Film, Sparkles, Loader2, CalendarDays, Flame, Trophy } from "lucide-react";
 import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useStreak } from "@/hooks/use-streak";
 import { GENERATION_META, type Generation } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
@@ -25,6 +26,8 @@ function HomePage() {
   const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
   const [loading, setLoading] = useState(false);
   const [dailyLoading, setDailyLoading] = useState(false);
+  const [streakLoading, setStreakLoading] = useState(false);
+  const streak = useStreak();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -70,6 +73,33 @@ function HomePage() {
       setError(e instanceof Error ? e.message : "Failed to load daily challenge.");
       setDailyLoading(false);
     }
+  }
+
+  async function handleStreak() {
+    setError(null);
+    const finalName = (draftName || username).trim();
+    if (finalName) {
+      if (finalName.length > 24) {
+        setError("Username must be 24 characters or fewer.");
+        return;
+      }
+      setUsername(finalName);
+    }
+    setStreakLoading(true);
+    try {
+      const settings = { mode, difficulty, generation };
+      const res = await createGameFn({ data: settings });
+      streak.start(res.gameId, settings);
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to start streak.");
+      setStreakLoading(false);
+    }
+  }
+
+  async function handleContinueStreak() {
+    if (!streak.state.currentGameId) return;
+    navigate({ to: "/game/$gameId", params: { gameId: streak.state.currentGameId } });
   }
 
   const todayLabel = new Date().toLocaleDateString(undefined, {
@@ -128,8 +158,58 @@ function HomePage() {
           </div>
         </button>
 
+        {/* Survival Streak */}
+        {streak.hydrated && streak.state.active && streak.state.currentGameId ? (
+          <button
+            onClick={handleContinueStreak}
+            className="w-full mb-5 group relative overflow-hidden rounded-xl border border-orange-500/50 bg-gradient-to-br from-orange-950/40 to-card p-5 text-left transition hover:border-orange-400"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
+                <Flame className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-lg text-orange-300">Continue Streak</span>
+                  <span className="text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
+                    🔥 {streak.state.count}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Pick up where you left off. One fail ends the run.
+                </div>
+              </div>
+              <div className="text-orange-300 text-xl">→</div>
+            </div>
+          </button>
+        ) : (
+          <button
+            onClick={handleStreak}
+            disabled={streakLoading}
+            className="w-full mb-5 group relative overflow-hidden rounded-xl border border-orange-500/40 bg-gradient-to-br from-orange-950/30 to-card p-5 text-left transition hover:border-orange-400/80 disabled:opacity-60"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
+                {streakLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Flame className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-lg text-orange-300">Survival Streak</span>
+                  {streak.hydrated && streak.stats.best > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
+                      <Trophy className="h-2.5 w-2.5" /> Best {streak.stats.best}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Solve back-to-back. One fail and the run ends. Uses your settings below.
+                </div>
+              </div>
+              <div className="text-orange-300 text-xl">→</div>
+            </div>
+          </button>
+        )}
 
-        {/* Card */}
         <div className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-2xl">
           {/* Username */}
           <label className="block">

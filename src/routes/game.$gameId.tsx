@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Film,
   Flag,
+  Flame,
   Lightbulb,
   Loader2,
   Plus,
@@ -28,6 +29,7 @@ import { PathDisplay } from "@/components/PathDisplay";
 import { DebugPanel } from "@/components/DebugPanel";
 import type { ChainStep } from "@/lib/types";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useStreak } from "@/hooks/use-streak";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: GameScreen,
@@ -69,6 +71,10 @@ function GameScreen() {
 
   const [username] = useLocalStorage<string>("sdh:username", "Anonymous");
   const [history, setHistory] = useLocalStorage<ScoreEntry[]>("sdh:history", []);
+  const streak = useStreak();
+  const isStreakGame = streak.hydrated && streak.state.active && streak.state.currentGameId === gameId;
+  const [streakEnded, setStreakEnded] = useState<{ finalCount: number; best: number } | null>(null);
+  const [advancingStreak, setAdvancingStreak] = useState(false);
 
   const [game, setGame] = useState<GameData | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -170,6 +176,12 @@ function GameScreen() {
           ...history,
         ].slice(0, 50));
 
+        // Streak: solved → increment, await next puzzle (Continue button).
+        if (isStreakGame) {
+          streak.recordSolved(null);
+        }
+
+
         // Kick off alternates BFS separately so it doesn't block validation.
         if (("alternatesPending" in res && res.alternatesPending) || !res.shortestPath) {
           setAlternatesLoading(true);
@@ -236,6 +248,15 @@ function GameScreen() {
           : "No path found within 6 degrees.",
       });
       if (res.debug) setDebugInfo(res.debug);
+
+      // Streak: giving up ends the run.
+      if (isStreakGame) {
+        const finalCount = streak.state.count;
+        const newBest = Math.max(streak.stats.best, finalCount);
+        streak.end(finalCount);
+        setStreakEnded({ finalCount, best: newBest });
+      }
+
     } catch (e) {
       setResult({ valid: false, reason: (e as Error).message });
     } finally {
@@ -264,6 +285,28 @@ function GameScreen() {
       setRefreshing(false);
     }
   }
+
+  async function continueStreak() {
+    if (!streak.state.settings || advancingStreak) return;
+    setAdvancingStreak(true);
+    try {
+      const res = await createGameFn({ data: streak.state.settings });
+      streak.advance(res.gameId);
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setValidationLog((l) => [...l, `Streak advance error: ${(e as Error).message}`]);
+      setAdvancingStreak(false);
+    }
+  }
+
+  function endStreakNow() {
+    if (!isStreakGame) return;
+    const finalCount = streak.state.count;
+    const newBest = Math.max(streak.stats.best, finalCount);
+    streak.end(finalCount);
+    setStreakEnded({ finalCount, best: newBest });
+  }
+
 
   // Share helpers
   const [shareCopied, setShareCopied] = useState<null | "link" | "result">(null);
@@ -333,6 +376,11 @@ function GameScreen() {
             Home
           </Link>
           <div className="flex items-center gap-2">
+            {isStreakGame && (
+              <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest text-orange-300 border border-orange-400/50 rounded px-2 py-0.5 bg-orange-500/10">
+                <Flame className="h-3 w-3" /> Streak {streak.state.count}
+              </span>
+            )}
             {game.isDaily && (
               <span className="text-[10px] uppercase tracking-widest text-gold-bright border border-gold/50 rounded px-2 py-0.5 bg-secondary">
                 Daily · {game.dailyDate}
@@ -518,11 +566,53 @@ function GameScreen() {
               </div>
             )}
 
+            {/* Streak-specific banners */}
+            {streakEnded && (
+              <div className="mt-4 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4">
+                <div className="flex items-center gap-2 text-orange-300">
+                  <Flame className="h-5 w-5" />
+                  <h3 className="font-display text-lg">Streak ended at {streakEnded.finalCount}</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Best streak: <span className="text-orange-300 font-semibold">{streakEnded.best}</span>. Start a new run anytime.
+                </p>
+              </div>
+            )}
+            {isStreakGame && result.valid && !streakEnded && (
+              <div className="mt-4 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4">
+                <div className="flex items-center gap-2 text-orange-300">
+                  <Flame className="h-5 w-5" />
+                  <h3 className="font-display text-lg">Streak: {streak.state.count} 🔥</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Keep it going — one fail or give-up ends the run.
+                </p>
+              </div>
+            )}
+
             <div className="mt-5 flex flex-wrap gap-2">
+              {isStreakGame && result.valid && !streakEnded && (
+                <>
+                  <button
+                    onClick={continueStreak}
+                    disabled={advancingStreak}
+                    className="bg-orange-500 hover:bg-orange-400 text-white font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2 disabled:opacity-60"
+                  >
+                    {advancingStreak ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flame className="h-4 w-4" />}
+                    Continue Streak →
+                  </button>
+                  <button
+                    onClick={endStreakNow}
+                    className="border border-orange-500/40 text-orange-300 py-2 px-4 rounded-md text-sm hover:bg-orange-500/10 inline-flex items-center gap-2"
+                  >
+                    Bank streak ({streak.state.count})
+                  </button>
+                </>
+              )}
               {result.valid && (
                 <button
                   onClick={shareResult}
-                  className="gradient-gold text-primary-foreground font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2"
+                  className={`${isStreakGame && !streakEnded ? "border border-border text-foreground hover:bg-secondary text-sm" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2`}
                   title="Share your result"
                 >
                   {shareCopied === "result" ? (
@@ -531,26 +621,28 @@ function GameScreen() {
                     </>
                   ) : (
                     <>
-                      <Share2 className="h-4 w-4" /> Share result
+                      <Share2 className="h-4 w-4" /> Share
                     </>
                   )}
                 </button>
               )}
               <button
                 onClick={playAgain}
-                className={`${result.valid ? "border border-border text-foreground hover:bg-secondary" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2 text-sm`}
+                className={`${result.valid && !(isStreakGame && !streakEnded) ? "border border-border text-foreground hover:bg-secondary" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2 text-sm`}
               >
                 <Film className="h-4 w-4" />
-                Play again
+                Home
               </button>
-              <button
-                onClick={newPair}
-                disabled={refreshing}
-                className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
-              >
-                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                New pair
-              </button>
+              {!isStreakGame && (
+                <button
+                  onClick={newPair}
+                  disabled={refreshing}
+                  className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
+                >
+                  {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  New pair
+                </button>
+              )}
             </div>
           </div>
         )}
