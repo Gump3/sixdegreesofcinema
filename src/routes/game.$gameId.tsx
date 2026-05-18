@@ -71,6 +71,10 @@ function GameScreen() {
 
   const [username] = useLocalStorage<string>("sdh:username", "Anonymous");
   const [history, setHistory] = useLocalStorage<ScoreEntry[]>("sdh:history", []);
+  const streak = useStreak();
+  const isStreakGame = streak.hydrated && streak.state.active && streak.state.currentGameId === gameId;
+  const [streakEnded, setStreakEnded] = useState<{ finalCount: number; best: number } | null>(null);
+  const [advancingStreak, setAdvancingStreak] = useState(false);
 
   const [game, setGame] = useState<GameData | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
