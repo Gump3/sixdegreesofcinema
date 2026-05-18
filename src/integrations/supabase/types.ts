@@ -20,8 +20,10 @@ export type Database = {
           actor_b: Json
           alternates: Json | null
           created_at: string
+          daily_date: string | null
           difficulty: string
           id: string
+          is_daily: boolean
           mode: string
           shortest_path: Json | null
         }
@@ -30,8 +32,10 @@ export type Database = {
           actor_b: Json
           alternates?: Json | null
           created_at?: string
+          daily_date?: string | null
           difficulty?: string
           id?: string
+          is_daily?: boolean
           mode?: string
           shortest_path?: Json | null
         }
@@ -40,8 +44,10 @@ export type Database = {
           actor_b?: Json
           alternates?: Json | null
           created_at?: string
+          daily_date?: string | null
           difficulty?: string
           id?: string
+          is_daily?: boolean
           mode?: string
           shortest_path?: Json | null
         }
