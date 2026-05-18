@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Film, Sparkles, Loader2, CalendarDays } from "lucide-react";
+import { Film, Sparkles, Loader2, CalendarDays, Flame, Trophy } from "lucide-react";
 import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useStreak } from "@/hooks/use-streak";
 import { GENERATION_META, type Generation } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
@@ -25,6 +26,8 @@ function HomePage() {
   const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
   const [loading, setLoading] = useState(false);
   const [dailyLoading, setDailyLoading] = useState(false);
+  const [streakLoading, setStreakLoading] = useState(false);
+  const streak = useStreak();
 
   const [error, setError] = useState<string | null>(null);
 
