@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      games: {
+        Row: {
+          actor_a: Json
+          actor_b: Json
+          alternates: Json | null
+          created_at: string
+          difficulty: string
+          id: string
+          mode: string
+          shortest_path: Json | null
+        }
+        Insert: {
+          actor_a: Json
+          actor_b: Json
+          alternates?: Json | null
+          created_at?: string
+          difficulty?: string
+          id?: string
+          mode?: string
+          shortest_path?: Json | null
+        }
+        Update: {
+          actor_a?: Json
+          actor_b?: Json
+          alternates?: Json | null
+          created_at?: string
+          difficulty?: string
+          id?: string
+          mode?: string
+          shortest_path?: Json | null
+        }
+        Relationships: []
+      }
+      tmdb_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          expires_at: string
+          payload: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          expires_at: string
+          payload: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

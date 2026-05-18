@@ -1,26 +1,199 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { Film, Sparkles, Loader2 } from "lucide-react";
+import { createGame } from "@/lib/game.functions";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: HomePage,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+type Mode = "noob" | "buff";
+type Difficulty = "easy" | "medium" | "hard";
+
+function HomePage() {
+  const navigate = useNavigate();
+  const createGameFn = useServerFn(createGame);
+  const [username, setUsername, hydrated] = useLocalStorage<string>("sdh:username", "");
+  const [draftName, setDraftName] = useState("");
+  const [mode, setMode] = useLocalStorage<Mode>("sdh:mode", "noob");
+  const [difficulty, setDifficulty] = useLocalStorage<Difficulty>("sdh:difficulty", "easy");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const effectiveName = username || draftName;
+
+  async function handleStart() {
+    setError(null);
+    const finalName = (draftName || username).trim();
+    if (!finalName) {
+      setError("Pick a username to keep your scores.");
+      return;
+    }
+    if (finalName.length > 24) {
+      setError("Username must be 24 characters or fewer.");
+      return;
+    }
+    setUsername(finalName);
+    setLoading(true);
+    try {
+      const res = await createGameFn({ data: { mode, difficulty } });
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to start a game.");
+      setLoading(false);
+    }
+  }
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-xl">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 text-gold text-xs uppercase tracking-[0.3em] mb-3">
+            <Sparkles className="h-3 w-3" />
+            <span>A Hollywood Puzzle</span>
+            <Sparkles className="h-3 w-3" />
+          </div>
+          <h1 className="font-display text-5xl sm:text-6xl text-gold-bright leading-none">
+            Six Degrees
+          </h1>
+          <p className="font-display text-2xl text-foreground mt-1 italic">Hollywood</p>
+          <p className="text-muted-foreground mt-4 max-w-md mx-auto text-sm">
+            Connect any two stars in six degrees or fewer. Use only{" "}
+            <span className="text-gold">acting</span> and{" "}
+            <span className="text-gold">directing</span> credits.
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-2xl">
+          {/* Username */}
+          <label className="block">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">
+              Your name
+            </span>
+            <input
+              type="text"
+              maxLength={24}
+              placeholder={hydrated && username ? username : "e.g. Marty"}
+              value={draftName || (hydrated ? username : "")}
+              onChange={(e) => setDraftName(e.target.value)}
+              className="mt-2 w-full bg-input border border-border rounded-md px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
+            />
+          </label>
+
+          {/* Mode */}
+          <div className="mt-6">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+              Mode
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <ModeButton
+                label="Movie Noob"
+                sub="Dropdowns"
+                active={mode === "noob"}
+                onClick={() => setMode("noob")}
+              />
+              <ModeButton
+                label="Movie Buff"
+                sub="Type to search"
+                active={mode === "buff"}
+                onClick={() => setMode("buff")}
+              />
+            </div>
+          </div>
+
+          {/* Difficulty */}
+          <div className="mt-6">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+              Difficulty
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {(["easy", "medium", "hard"] as const).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDifficulty(d)}
+                  className={`py-2 rounded-md text-sm capitalize border transition ${
+                    difficulty === d
+                      ? "border-gold text-gold-bright bg-secondary"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {difficulty === "easy" && "Top-tier stars. Mostly easy bridges."}
+              {difficulty === "medium" && "Broader pool. Trickier pairs."}
+              {difficulty === "hard" && "No trivial costars. Dig deeper."}
+            </p>
+          </div>
+
+          {/* CTA */}
+          {error && (
+            <p className="mt-4 text-sm text-destructive">{error}</p>
+          )}
+          <button
+            onClick={handleStart}
+            disabled={loading}
+            className="mt-6 w-full gradient-gold text-primary-foreground font-semibold py-4 rounded-md shadow-gold disabled:opacity-60 disabled:cursor-not-allowed transition-transform hover:scale-[1.01] active:scale-[0.99] inline-flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Film className="h-5 w-5" />}
+            <span>{loading ? "Casting…" : "Start Game"}</span>
+          </button>
+
+          {hydrated && username && (
+            <p className="text-center text-xs text-muted-foreground mt-3">
+              Playing as <span className="text-gold">{effectiveName || username}</span>
+            </p>
+          )}
+        </div>
+
+        {/* Rules */}
+        <details className="mt-6 bg-card/50 border border-border rounded-lg px-4 py-3">
+          <summary className="cursor-pointer text-sm text-gold-bright font-semibold">
+            How to play
+          </summary>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground list-disc pl-5">
+            <li>You'll see two actors. Connect them in six degrees or fewer.</li>
+            <li>Build the chain: <span className="text-foreground">Person → Movie → Person → Movie → …</span></li>
+            <li>Allowed connections: shared <span className="text-gold">acting</span> credit (including voice), or one person <span className="text-gold">directed</span> the movie.</li>
+            <li>Writing/producing credits don't count.</li>
+            <li>Stuck? Use a hint (-10 pts) or Give Up to reveal the shortest path.</li>
+          </ul>
+        </details>
+      </div>
+    </main>
   );
 }
 
-function Index() {
-  return <PlaceholderIndex />;
+function ModeButton({
+  label,
+  sub,
+  active,
+  onClick,
+}: {
+  label: string;
+  sub: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`py-3 rounded-md border transition text-left px-4 ${
+        active
+          ? "border-gold bg-secondary"
+          : "border-border hover:border-muted-foreground"
+      }`}
+    >
+      <div className={active ? "text-gold-bright font-semibold" : "text-foreground font-semibold"}>
+        {label}
+      </div>
+      <div className="text-xs text-muted-foreground">{sub}</div>
+    </button>
+  );
 }
