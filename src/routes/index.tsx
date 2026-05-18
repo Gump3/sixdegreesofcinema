@@ -21,7 +21,9 @@ function HomePage() {
   const [draftName, setDraftName] = useState("");
   const [mode, setMode] = useLocalStorage<Mode>("sdh:mode", "noob");
   const [difficulty, setDifficulty] = useLocalStorage<Difficulty>("sdh:difficulty", "easy");
+  const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
 
   const effectiveName = username || draftName;
