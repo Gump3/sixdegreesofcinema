@@ -320,22 +320,35 @@ function nodeKey(n: Node): string {
 export async function findShortestPath(
   personAId: number,
   personBId: number,
-  opts: { maxDepth?: number; movieCastCap?: number; personMovieCap?: number; excludePersonIds?: Set<number> } = {},
+  opts: {
+    maxDepth?: number;
+    movieCastCap?: number;
+    personMovieCap?: number;
+    excludePersonIds?: Set<number>;
+    budgetMs?: number;
+    maxTmdbCalls?: number;
+  } = {},
 ): Promise<ChainStep[] | null> {
-  const maxDepth = opts.maxDepth ?? 6;
-  const movieCastCap = opts.movieCastCap ?? 15;
-  const personMovieCap = opts.personMovieCap ?? 30;
+  // Tight defaults so the BFS finishes inside a Worker request window.
+  // Popular Hollywood pairs almost always connect within 2–3 degrees;
+  // depth=4 keeps us safe without ballooning the call count.
+  const maxDepth = opts.maxDepth ?? 4;
+  const movieCastCap = opts.movieCastCap ?? 6;
+  const personMovieCap = opts.personMovieCap ?? 10;
   const exclude = opts.excludePersonIds ?? new Set<number>();
+  const deadline = Date.now() + (opts.budgetMs ?? 20_000);
+  const startCalls = tmdbCallsThisProcess;
+  const maxCalls = opts.maxTmdbCalls ?? 200;
+  const callsExceeded = () => tmdbCallsThisProcess - startCalls >= maxCalls;
+  const timeExceeded = () => Date.now() > deadline;
 
   if (personAId === personBId) return null;
 
-  // Pre-fetch person details for endpoints (for DTOs)
   const [aDetails, bDetails] = await Promise.all([
     tmdb<Person>(`/person/${personAId}`, {}, "credits"),
     tmdb<Person>(`/person/${personBId}`, {}, "credits"),
   ]);
 
-  // BFS, where each "level" is a Person. We expand person → movies → next persons in one step.
   const parents = new Map<string, { node: Node; via?: Node }>();
   parents.set(nodeKey({ kind: "person", id: personAId }), {
     node: { kind: "person", id: personAId },
@@ -345,11 +358,12 @@ export async function findShortestPath(
   let found: { kind: "person"; id: number } | null = null;
 
   outer: for (let depth = 1; depth <= maxDepth / 2 + 0.5 && frontier.length > 0; depth++) {
+    if (timeExceeded() || callsExceeded()) break;
     const nextFrontier: Array<{ kind: "person"; id: number }> = [];
-    const movieIdsThisLevel = new Map<number, number>(); // movieId -> sourcePersonId
+    const movieIdsThisLevel = new Map<number, number>();
 
-    // Step 1: expand each person to their (capped) eligible movies
     for (const p of frontier) {
+      if (timeExceeded() || callsExceeded()) break outer;
       let credits: { acting: Movie[]; directing: Movie[] };
       try {
         credits = await getPersonCredits(p.id);
@@ -367,8 +381,8 @@ export async function findShortestPath(
       }
     }
 
-    // Step 2: expand each new movie to its (capped) cast+directors → next persons
     for (const [movieId] of movieIdsThisLevel) {
+      if (timeExceeded() || callsExceeded()) break outer;
       let mc: { cast: Person[]; directors: Person[] };
       try {
         mc = await getMovieCredits(movieId);
