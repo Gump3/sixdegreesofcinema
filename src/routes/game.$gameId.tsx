@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  createGame,
   getAlternatesFn,
   getHint,
   giveUp,
