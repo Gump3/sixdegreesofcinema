@@ -158,8 +158,58 @@ function HomePage() {
           </div>
         </button>
 
+        {/* Survival Streak */}
+        {streak.hydrated && streak.state.active && streak.state.currentGameId ? (
+          <button
+            onClick={handleContinueStreak}
+            className="w-full mb-5 group relative overflow-hidden rounded-xl border border-orange-500/50 bg-gradient-to-br from-orange-950/40 to-card p-5 text-left transition hover:border-orange-400"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
+                <Flame className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-lg text-orange-300">Continue Streak</span>
+                  <span className="text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
+                    🔥 {streak.state.count}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Pick up where you left off. One fail ends the run.
+                </div>
+              </div>
+              <div className="text-orange-300 text-xl">→</div>
+            </div>
+          </button>
+        ) : (
+          <button
+            onClick={handleStreak}
+            disabled={streakLoading}
+            className="w-full mb-5 group relative overflow-hidden rounded-xl border border-orange-500/40 bg-gradient-to-br from-orange-950/30 to-card p-5 text-left transition hover:border-orange-400/80 disabled:opacity-60"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
+                {streakLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Flame className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-lg text-orange-300">Survival Streak</span>
+                  {streak.hydrated && streak.stats.best > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
+                      <Trophy className="h-2.5 w-2.5" /> Best {streak.stats.best}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Solve back-to-back. One fail and the run ends. Uses your settings below.
+                </div>
+              </div>
+              <div className="text-orange-300 text-xl">→</div>
+            </div>
+          </button>
+        )}
 
-        {/* Card */}
         <div className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-2xl">
           {/* Username */}
           <label className="block">
