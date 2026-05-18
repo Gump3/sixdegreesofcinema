@@ -248,6 +248,15 @@ function GameScreen() {
           : "No path found within 6 degrees.",
       });
       if (res.debug) setDebugInfo(res.debug);
+
+      // Streak: giving up ends the run.
+      if (isStreakGame) {
+        const finalCount = streak.state.count;
+        const newBest = Math.max(streak.stats.best, finalCount);
+        streak.end(finalCount);
+        setStreakEnded({ finalCount, best: newBest });
+      }
+
     } catch (e) {
       setResult({ valid: false, reason: (e as Error).message });
     } finally {
