@@ -19,6 +19,7 @@ import {
   movieDto,
   personDto,
   readDebugCounters,
+  searchMovies,
   searchPeople,
   TMDB_IMG,
 } from "./tmdb.server";
