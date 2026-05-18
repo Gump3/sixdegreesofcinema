@@ -164,6 +164,28 @@ function GameScreen() {
           },
           ...history,
         ].slice(0, 50));
+
+        // Kick off alternates BFS separately so it doesn't block validation.
+        if (("alternatesPending" in res && res.alternatesPending) || !res.shortestPath) {
+          setAlternatesLoading(true);
+          alternatesFn({ data: { gameId } })
+            .then((alt) => {
+              setResult((r) =>
+                r && r.valid
+                  ? { ...r, shortestPath: alt.shortestPath, alternates: alt.alternates }
+                  : r,
+              );
+              if (alt.debug) setDebugInfo(alt.debug);
+              setValidationLog((l) => [
+                ...l,
+                `Alternates loaded (${alt.alternates.length}).`,
+              ]);
+            })
+            .catch((e) => {
+              setValidationLog((l) => [...l, `Alternates error: ${(e as Error).message}`]);
+            })
+            .finally(() => setAlternatesLoading(false));
+        }
       } else {
         setValidationLog((l) => [...l, `Invalid: ${res.reason}`]);
       }
