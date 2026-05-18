@@ -566,11 +566,53 @@ function GameScreen() {
               </div>
             )}
 
+            {/* Streak-specific banners */}
+            {streakEnded && (
+              <div className="mt-4 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4">
+                <div className="flex items-center gap-2 text-orange-300">
+                  <Flame className="h-5 w-5" />
+                  <h3 className="font-display text-lg">Streak ended at {streakEnded.finalCount}</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Best streak: <span className="text-orange-300 font-semibold">{streakEnded.best}</span>. Start a new run anytime.
+                </p>
+              </div>
+            )}
+            {isStreakGame && result.valid && !streakEnded && (
+              <div className="mt-4 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4">
+                <div className="flex items-center gap-2 text-orange-300">
+                  <Flame className="h-5 w-5" />
+                  <h3 className="font-display text-lg">Streak: {streak.state.count} 🔥</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Keep it going — one fail or give-up ends the run.
+                </p>
+              </div>
+            )}
+
             <div className="mt-5 flex flex-wrap gap-2">
+              {isStreakGame && result.valid && !streakEnded && (
+                <>
+                  <button
+                    onClick={continueStreak}
+                    disabled={advancingStreak}
+                    className="bg-orange-500 hover:bg-orange-400 text-white font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2 disabled:opacity-60"
+                  >
+                    {advancingStreak ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flame className="h-4 w-4" />}
+                    Continue Streak →
+                  </button>
+                  <button
+                    onClick={endStreakNow}
+                    className="border border-orange-500/40 text-orange-300 py-2 px-4 rounded-md text-sm hover:bg-orange-500/10 inline-flex items-center gap-2"
+                  >
+                    Bank streak ({streak.state.count})
+                  </button>
+                </>
+              )}
               {result.valid && (
                 <button
                   onClick={shareResult}
-                  className="gradient-gold text-primary-foreground font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2"
+                  className={`${isStreakGame && !streakEnded ? "border border-border text-foreground hover:bg-secondary text-sm" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2`}
                   title="Share your result"
                 >
                   {shareCopied === "result" ? (
@@ -579,26 +621,28 @@ function GameScreen() {
                     </>
                   ) : (
                     <>
-                      <Share2 className="h-4 w-4" /> Share result
+                      <Share2 className="h-4 w-4" /> Share
                     </>
                   )}
                 </button>
               )}
               <button
                 onClick={playAgain}
-                className={`${result.valid ? "border border-border text-foreground hover:bg-secondary" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2 text-sm`}
+                className={`${result.valid && !(isStreakGame && !streakEnded) ? "border border-border text-foreground hover:bg-secondary" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2 text-sm`}
               >
                 <Film className="h-4 w-4" />
-                Play again
+                Home
               </button>
-              <button
-                onClick={newPair}
-                disabled={refreshing}
-                className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
-              >
-                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                New pair
-              </button>
+              {!isStreakGame && (
+                <button
+                  onClick={newPair}
+                  disabled={refreshing}
+                  className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
+                >
+                  {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  New pair
+                </button>
+              )}
             </div>
           </div>
         )}
