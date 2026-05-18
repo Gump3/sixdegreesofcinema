@@ -429,6 +429,13 @@ function GameScreen() {
               </div>
             )}
 
+            {result.valid && !result.shortestPath && alternatesLoading && (
+              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin text-gold" />
+                Finding the shortest known path & alternates…
+              </div>
+            )}
+
             <div className="mt-5 flex gap-2">
               <button
                 onClick={playAgain}
