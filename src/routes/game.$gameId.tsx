@@ -248,7 +248,12 @@ function GameScreen() {
     if (!game || refreshing) return;
     setRefreshing(true);
     try {
-      const res = await createGameFn({ data: { mode: game.mode, difficulty: game.difficulty } });
+      let generation: "boomer" | "genx" | "millennial" | "genz" | "all" = "all";
+      try {
+        const raw = window.localStorage.getItem("sdh:generation");
+        if (raw) generation = JSON.parse(raw);
+      } catch { /* ignore */ }
+      const res = await createGameFn({ data: { mode: game.mode, difficulty: game.difficulty, generation } });
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
       setValidationLog((l) => [...l, `New pair error: ${(e as Error).message}`]);
