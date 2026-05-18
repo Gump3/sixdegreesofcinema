@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  getAlternatesFn,
   getHint,
   giveUp,
   loadGame,
