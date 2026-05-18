@@ -259,7 +259,7 @@ export const loadGame = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: row, error } = await supabaseAdmin
       .from("games")
-      .select("id, actor_a, actor_b, mode, difficulty")
+      .select("id, actor_a, actor_b, mode, difficulty, is_daily, daily_date")
       .eq("id", data.gameId)
       .single();
     if (error || !row) throw new Error("Game not found");
@@ -269,6 +269,8 @@ export const loadGame = createServerFn({ method: "GET" })
       actorB: row.actor_b as unknown as ActorRecord,
       mode: row.mode as "noob" | "buff",
       difficulty: row.difficulty as "easy" | "medium" | "hard",
+      isDaily: Boolean(row.is_daily),
+      dailyDate: (row.daily_date as string | null) ?? null,
     };
   });
 
