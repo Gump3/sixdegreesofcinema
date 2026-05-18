@@ -245,6 +245,19 @@ function GameScreen() {
     navigate({ to: "/" });
   }
 
+  const [refreshing, setRefreshing] = useState(false);
+  async function newPair() {
+    if (!game || refreshing) return;
+    setRefreshing(true);
+    try {
+      const res = await createGameFn({ data: { mode: game.mode, difficulty: game.difficulty } });
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setValidationLog((l) => [...l, `New pair error: ${(e as Error).message}`]);
+      setRefreshing(false);
+    }
+  }
+
   if (loadErr) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
