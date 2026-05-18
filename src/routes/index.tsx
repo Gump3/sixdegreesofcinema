@@ -17,12 +17,14 @@ type Difficulty = "easy" | "medium" | "hard";
 function HomePage() {
   const navigate = useNavigate();
   const createGameFn = useServerFn(createGame);
+  const dailyFn = useServerFn(getDailyChallenge);
   const [username, setUsername, hydrated] = useLocalStorage<string>("sdh:username", "");
   const [draftName, setDraftName] = useState("");
   const [mode, setMode] = useLocalStorage<Mode>("sdh:mode", "noob");
   const [difficulty, setDifficulty] = useLocalStorage<Difficulty>("sdh:difficulty", "easy");
   const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
   const [loading, setLoading] = useState(false);
+  const [dailyLoading, setDailyLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
