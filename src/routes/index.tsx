@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Film, Sparkles, Loader2 } from "lucide-react";
-import { createGame } from "@/lib/game.functions";
+import { Film, Sparkles, Loader2, CalendarDays } from "lucide-react";
+import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { GENERATION_META, type Generation } from "@/lib/types";
 
