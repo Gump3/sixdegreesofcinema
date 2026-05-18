@@ -271,6 +271,24 @@ export async function searchPeople(query: string): Promise<Person[]> {
     }));
 }
 
+export async function searchMovies(query: string): Promise<Movie[]> {
+  if (!query.trim()) return [];
+  const data = await tmdb<{ results?: (Movie & { original_language?: string })[] }>(
+    `/search/movie`,
+    { query, include_adult: "false" },
+    "search",
+  );
+  return (data.results ?? [])
+    .filter((m) => isEligibleMovieBasic(m))
+    .slice(0, 12)
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      poster_path: m.poster_path ?? null,
+      release_date: m.release_date,
+      popularity: m.popularity,
+    }));
+
 export async function getPopularPeoplePage(
   page: number,
   opts: { eraRange?: [number, number] | null } = {},
