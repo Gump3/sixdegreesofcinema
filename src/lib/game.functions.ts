@@ -451,6 +451,14 @@ export const giveUp = createServerFn({ method: "POST" })
   });
 
 // ============== getDebug (read counters) ==============
+// ============== searchMoviesFn (TMDB title search; used for greyed-out hints) ==============
+export const searchMoviesFn = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ query: z.string().min(1).max(100) }).parse(input))
+  .handler(async ({ data }) => {
+    const results = await searchMovies(data.query);
+    return results.map(movieDto);
+  });
+
 export const getDebugStats = createServerFn({ method: "GET" }).handler(async () => {
   return readDebugCounters();
 });
