@@ -50,6 +50,7 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
   const getPersonMovies = useServerFn(getPersonMoviesFn);
   const getMoviePeople = useServerFn(getMoviePeopleFn);
   const searchPeople = useServerFn(searchPeopleFn);
+  const searchMovies = useServerFn(searchMoviesFn);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
