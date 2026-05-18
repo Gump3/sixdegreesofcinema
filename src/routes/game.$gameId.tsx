@@ -286,6 +286,28 @@ function GameScreen() {
     }
   }
 
+  async function continueStreak() {
+    if (!streak.state.settings || advancingStreak) return;
+    setAdvancingStreak(true);
+    try {
+      const res = await createGameFn({ data: streak.state.settings });
+      streak.advance(res.gameId);
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setValidationLog((l) => [...l, `Streak advance error: ${(e as Error).message}`]);
+      setAdvancingStreak(false);
+    }
+  }
+
+  function endStreakNow() {
+    if (!isStreakGame) return;
+    const finalCount = streak.state.count;
+    const newBest = Math.max(streak.stats.best, finalCount);
+    streak.end(finalCount);
+    setStreakEnded({ finalCount, best: newBest });
+  }
+
+
   // Share helpers
   const [shareCopied, setShareCopied] = useState<null | "link" | "result">(null);
   async function copyText(text: string, kind: "link" | "result") {
