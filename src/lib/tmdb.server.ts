@@ -234,15 +234,34 @@ export async function getMovieCredits(movieId: number): Promise<{
   return { cast, directors };
 }
 
+type KnownForItem = { media_type?: string; original_language?: string; release_date?: string };
+
+/**
+ * Hollywood eligibility: the person's TMDB `known_for` array must contain
+ * at least one English-language theatrical movie with a past release date.
+ * Keeps the pool focused on actors a Hollywood player can recognize.
+ */
+function isHollywoodKnownFor(knownFor: KnownForItem[] | undefined): boolean {
+  if (!knownFor || knownFor.length === 0) return false;
+  return knownFor.some(
+    (k) =>
+      k.media_type === "movie" &&
+      k.original_language === "en" &&
+      !!k.release_date &&
+      Date.parse(k.release_date) <= Date.now(),
+  );
+}
+
 export async function searchPeople(query: string): Promise<Person[]> {
   if (!query.trim()) return [];
-  const data = await tmdb<{ results?: Person[] }>(
+  const data = await tmdb<{ results?: (Person & { known_for?: KnownForItem[] })[] }>(
     `/search/person`,
     { query, include_adult: "false" },
     "search",
   );
   return (data.results ?? [])
     .filter((p) => p.known_for_department === "Acting" || p.known_for_department === "Directing")
+    .filter((p) => isHollywoodKnownFor(p.known_for))
     .slice(0, 10)
     .map((p) => ({
       id: p.id,
@@ -254,14 +273,14 @@ export async function searchPeople(query: string): Promise<Person[]> {
 }
 
 export async function getPopularPeoplePage(page: number): Promise<Person[]> {
-  const data = await tmdb<{ results?: Person[] }>(
+  const data = await tmdb<{ results?: (Person & { known_for?: KnownForItem[] })[] }>(
     `/person/popular`,
     { page },
     "person_popular",
   );
-  return (data.results ?? []).filter(
-    (p) => p.known_for_department === "Acting" || p.known_for_department === "Directing",
-  );
+  return (data.results ?? [])
+    .filter((p) => p.known_for_department === "Acting" || p.known_for_department === "Directing")
+    .filter((p) => isHollywoodKnownFor(p.known_for));
 }
 
 // ============== Public DTO helpers (with full image URLs) ==============
