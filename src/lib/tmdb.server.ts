@@ -288,6 +288,8 @@ export async function searchMovies(query: string): Promise<Movie[]> {
       release_date: m.release_date,
       popularity: m.popularity,
     }));
+}
+
 
 export async function getPopularPeoplePage(
   page: number,
