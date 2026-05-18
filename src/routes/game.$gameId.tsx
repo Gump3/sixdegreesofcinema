@@ -59,6 +59,8 @@ function GameScreen() {
   const hintFn = useServerFn(getHint);
   const giveUpFn = useServerFn(giveUp);
   const alternatesFn = useServerFn(getAlternatesFn);
+  const createGameFn = useServerFn(createGame);
+  void router;
 
   const isDebug =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "true";
