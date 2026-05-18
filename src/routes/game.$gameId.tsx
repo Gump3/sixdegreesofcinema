@@ -518,10 +518,27 @@ function GameScreen() {
               </div>
             )}
 
-            <div className="mt-5 flex gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
+              {result.valid && (
+                <button
+                  onClick={shareResult}
+                  className="gradient-gold text-primary-foreground font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2"
+                  title="Share your result"
+                >
+                  {shareCopied === "result" ? (
+                    <>
+                      <Check className="h-4 w-4" /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4" /> Share result
+                    </>
+                  )}
+                </button>
+              )}
               <button
                 onClick={playAgain}
-                className="gradient-gold text-primary-foreground font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2"
+                className={`${result.valid ? "border border-border text-foreground hover:bg-secondary" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2 text-sm`}
               >
                 <Film className="h-4 w-4" />
                 Play again
