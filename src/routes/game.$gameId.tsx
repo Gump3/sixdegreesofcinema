@@ -52,7 +52,6 @@ type ScoreEntry = {
 
 function GameScreen() {
   const { gameId } = Route.useParams();
-  const router = useRouter();
   const navigate = useNavigate();
   const loadGameFn = useServerFn(loadGame);
   const validateFn = useServerFn(validateChain);
@@ -60,7 +59,6 @@ function GameScreen() {
   const giveUpFn = useServerFn(giveUp);
   const alternatesFn = useServerFn(getAlternatesFn);
   const createGameFn = useServerFn(createGame);
-  void router;
 
   const isDebug =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "true";
