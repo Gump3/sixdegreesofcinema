@@ -85,6 +85,7 @@ function GameScreen() {
         gaveUp?: boolean;
       }
   >(null);
+  const [alternatesLoading, setAlternatesLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<Parameters<typeof DebugPanel>[0]["debug"]>(null);
   const [validationLog, setValidationLog] = useState<string[]>([]);
 
