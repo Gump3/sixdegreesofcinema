@@ -100,9 +100,20 @@ function GameScreen() {
   const [debugInfo, setDebugInfo] = useState<Parameters<typeof DebugPanel>[0]["debug"]>(null);
   const [validationLog, setValidationLog] = useState<string[]>([]);
 
-  // Load game
+  // Load game — reset all per-game state when gameId changes
   useEffect(() => {
     let cancelled = false;
+    setGame(null);
+    setLoadErr(null);
+    setChain([]);
+    setResult(null);
+    setHintsUsed(0);
+    setDebugInfo(null);
+    setValidationLog([]);
+    setStreakEnded(null);
+    setRefreshing(false);
+    setAdvancingStreak(false);
+    setPickerOpen(false);
     (async () => {
       try {
         const g = await loadGameFn({ data: { gameId } });
