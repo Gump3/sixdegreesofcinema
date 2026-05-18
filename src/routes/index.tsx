@@ -42,7 +42,7 @@ function HomePage() {
     setUsername(finalName);
     setLoading(true);
     try {
-      const res = await createGameFn({ data: { mode, difficulty } });
+      const res = await createGameFn({ data: { mode, difficulty, generation } });
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start a game.");
