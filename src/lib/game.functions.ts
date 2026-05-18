@@ -320,7 +320,11 @@ export const getAlternatesFn = createServerFn({ method: "POST" })
     if (!shortest) {
       const actorA = game.data.actor_a as unknown as ActorRecord;
       const actorB = game.data.actor_b as unknown as ActorRecord;
-      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 6 });
+      shortest = await findShortestPath(actorA.id, actorB.id, {
+        maxDepth: 4,
+        budgetMs: 20_000,
+        maxTmdbCalls: 200,
+      });
       alternates = shortest ? await findAlternatePaths(actorA.id, actorB.id, 2, shortest) : [];
       await supabaseAdmin
         .from("games")
