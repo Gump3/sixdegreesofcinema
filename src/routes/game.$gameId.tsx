@@ -3,12 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Check,
   ChevronRight,
   Film,
   Flag,
   Lightbulb,
   Loader2,
   Plus,
+  Share2,
   Trophy,
   User,
   X,
