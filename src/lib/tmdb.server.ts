@@ -271,6 +271,26 @@ export async function searchPeople(query: string): Promise<Person[]> {
     }));
 }
 
+export async function searchMovies(query: string): Promise<Movie[]> {
+  if (!query.trim()) return [];
+  const data = await tmdb<{ results?: (Movie & { original_language?: string })[] }>(
+    `/search/movie`,
+    { query, include_adult: "false" },
+    "search",
+  );
+  return (data.results ?? [])
+    .filter((m) => isEligibleMovieBasic(m))
+    .slice(0, 12)
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      poster_path: m.poster_path ?? null,
+      release_date: m.release_date,
+      popularity: m.popularity,
+    }));
+}
+
+
 export async function getPopularPeoplePage(
   page: number,
   opts: { eraRange?: [number, number] | null } = {},
@@ -339,16 +359,16 @@ export async function findShortestPath(
     maxTmdbCalls?: number;
   } = {},
 ): Promise<ChainStep[] | null> {
-  // Tight defaults so the BFS finishes inside a Worker request window.
-  // Popular Hollywood pairs almost always connect within 2–3 degrees;
-  // depth=4 keeps us safe without ballooning the call count.
+  // `maxDepth` is the maximum number of DEGREES (movies) in the chain.
+  // Each BFS iteration expands one person → movie → person hop, i.e. adds
+  // one degree to the path. So we iterate exactly `maxDepth` times.
   const maxDepth = opts.maxDepth ?? 4;
-  const movieCastCap = opts.movieCastCap ?? 6;
-  const personMovieCap = opts.personMovieCap ?? 10;
+  const movieCastCap = opts.movieCastCap ?? 12;
+  const personMovieCap = opts.personMovieCap ?? 20;
   const exclude = opts.excludePersonIds ?? new Set<number>();
-  const deadline = Date.now() + (opts.budgetMs ?? 20_000);
+  const deadline = Date.now() + (opts.budgetMs ?? 22_000);
   const startCalls = tmdbCallsThisProcess;
-  const maxCalls = opts.maxTmdbCalls ?? 200;
+  const maxCalls = opts.maxTmdbCalls ?? 400;
   const callsExceeded = () => tmdbCallsThisProcess - startCalls >= maxCalls;
   const timeExceeded = () => Date.now() > deadline;
 
@@ -367,7 +387,7 @@ export async function findShortestPath(
   let frontier: Array<{ kind: "person"; id: number }> = [{ kind: "person", id: personAId }];
   let found: { kind: "person"; id: number } | null = null;
 
-  outer: for (let depth = 1; depth <= maxDepth / 2 + 0.5 && frontier.length > 0; depth++) {
+  outer: for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth++) {
     if (timeExceeded() || callsExceeded()) break;
     const nextFrontier: Array<{ kind: "person"; id: number }> = [];
     const movieIdsThisLevel = new Map<number, number>();
@@ -494,8 +514,8 @@ export async function findAlternatePaths(
     const alt = await findShortestPath(personAId, personBId, {
       excludePersonIds: exclude,
       maxDepth: 4,
-      budgetMs: 8_000,
-      maxTmdbCalls: 80,
+      budgetMs: 12_000,
+      maxTmdbCalls: 200,
     });
     if (!alt) continue;
     const sig = signaturePath(alt);

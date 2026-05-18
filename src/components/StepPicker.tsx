@@ -4,6 +4,7 @@ import { Loader2, Search, X } from "lucide-react";
 import {
   getMoviePeopleFn,
   getPersonMoviesFn,
+  searchMoviesFn,
   searchPeopleFn,
 } from "@/lib/game.functions";
 
@@ -49,6 +50,7 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
   const getPersonMovies = useServerFn(getPersonMoviesFn);
   const getMoviePeople = useServerFn(getMoviePeopleFn);
   const searchPeople = useServerFn(searchPeopleFn);
+  const searchMovies = useServerFn(searchMoviesFn);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +116,35 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
     };
   }, [mode, nextKind, query, searchPeople]);
 
+  // Remote MOVIE search (Buff mode, picking a movie) — informational, greyed-out.
+  const [remoteMovies, setRemoteMovies] = useState<MovieOpt[]>([]);
+  const [remoteMoviesLoading, setRemoteMoviesLoading] = useState(false);
+  useEffect(() => {
+    if (mode !== "buff") return;
+    if (nextKind !== "movie") return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setRemoteMovies([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      setRemoteMoviesLoading(true);
+      try {
+        const r = await searchMovies({ data: { query: q } });
+        if (!cancelled) setRemoteMovies(r as MovieOpt[]);
+      } catch {
+        if (!cancelled) setRemoteMovies([]);
+      } finally {
+        if (!cancelled) setRemoteMoviesLoading(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [mode, nextKind, query, searchMovies]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return candidates;
@@ -127,6 +158,14 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
   const visible: (PersonOpt | MovieOpt)[] = showRemote ? remoteResults : filtered;
   // Buff mode hides the list until user types
   const shouldShowList = mode === "noob" || query.trim().length > 0;
+
+  // Greyed-out, non-pickable movie hints: TMDB hits not in this person's filmography.
+  const unconnectedMovies = useMemo<MovieOpt[]>(() => {
+    if (mode !== "buff" || nextKind !== "movie") return [];
+    if (query.trim().length < 2) return [];
+    const localIds = new Set(candidates.map((c) => c.id));
+    return remoteMovies.filter((m) => !localIds.has(m.id)).slice(0, 6);
+  }, [mode, nextKind, query, candidates, remoteMovies]);
 
   const handlePick = useCallback(
     (opt: PersonOpt | MovieOpt) => {
@@ -225,6 +264,42 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
               </li>
             ))}
           </ul>
+        )}
+        {!loading && !error && shouldShowList && unconnectedMovies.length > 0 && (
+          <div className="mt-3 border-t border-border/60 pt-2 px-1">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+              Not in this person's filmography
+            </div>
+            <ul className="space-y-1">
+              {unconnectedMovies.map((m) => (
+                <li
+                  key={`unconnected-${m.id}`}
+                  title="This movie exists, but the prior person is not in its cast/crew. Pick a different movie, or a person who is in it first."
+                  className="w-full flex items-center gap-3 p-2 rounded-md opacity-40 cursor-not-allowed select-none"
+                >
+                  <div className="h-10 w-10 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                    {m.image ? (
+                      <img src={m.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">🎬</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-foreground truncate">
+                      {m.title}
+                      {m.year && <span className="text-muted-foreground"> ({m.year})</span>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">Not connected</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {remoteMoviesLoading && shouldShowList && (
+          <div className="px-1 py-2 text-xs text-muted-foreground inline-flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" /> Searching TMDB…
+          </div>
         )}
       </div>
     </div>
