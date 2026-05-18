@@ -376,6 +376,11 @@ function GameScreen() {
             Home
           </Link>
           <div className="flex items-center gap-2">
+            {isStreakGame && (
+              <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest text-orange-300 border border-orange-400/50 rounded px-2 py-0.5 bg-orange-500/10">
+                <Flame className="h-3 w-3" /> Streak {streak.state.count}
+              </span>
+            )}
             {game.isDaily && (
               <span className="text-[10px] uppercase tracking-widest text-gold-bright border border-gold/50 rounded px-2 py-0.5 bg-secondary">
                 Daily · {game.dailyDate}
