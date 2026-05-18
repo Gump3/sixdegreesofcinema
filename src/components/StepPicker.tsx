@@ -116,6 +116,35 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
     };
   }, [mode, nextKind, query, searchPeople]);
 
+  // Remote MOVIE search (Buff mode, picking a movie) — informational, greyed-out.
+  const [remoteMovies, setRemoteMovies] = useState<MovieOpt[]>([]);
+  const [remoteMoviesLoading, setRemoteMoviesLoading] = useState(false);
+  useEffect(() => {
+    if (mode !== "buff") return;
+    if (nextKind !== "movie") return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setRemoteMovies([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      setRemoteMoviesLoading(true);
+      try {
+        const r = await searchMovies({ data: { query: q } });
+        if (!cancelled) setRemoteMovies(r as MovieOpt[]);
+      } catch {
+        if (!cancelled) setRemoteMovies([]);
+      } finally {
+        if (!cancelled) setRemoteMoviesLoading(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [mode, nextKind, query, searchMovies]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return candidates;
@@ -129,6 +158,14 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
   const visible: (PersonOpt | MovieOpt)[] = showRemote ? remoteResults : filtered;
   // Buff mode hides the list until user types
   const shouldShowList = mode === "noob" || query.trim().length > 0;
+
+  // Greyed-out, non-pickable movie hints: TMDB hits not in this person's filmography.
+  const unconnectedMovies = useMemo<MovieOpt[]>(() => {
+    if (mode !== "buff" || nextKind !== "movie") return [];
+    if (query.trim().length < 2) return [];
+    const localIds = new Set(candidates.map((c) => c.id));
+    return remoteMovies.filter((m) => !localIds.has(m.id)).slice(0, 6);
+  }, [mode, nextKind, query, candidates, remoteMovies]);
 
   const handlePick = useCallback(
     (opt: PersonOpt | MovieOpt) => {
