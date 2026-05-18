@@ -265,6 +265,42 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
             ))}
           </ul>
         )}
+        {!loading && !error && shouldShowList && unconnectedMovies.length > 0 && (
+          <div className="mt-3 border-t border-border/60 pt-2 px-1">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+              Not in this person's filmography
+            </div>
+            <ul className="space-y-1">
+              {unconnectedMovies.map((m) => (
+                <li
+                  key={`unconnected-${m.id}`}
+                  title="This movie exists, but the prior person is not in its cast/crew. Pick a different movie, or a person who is in it first."
+                  className="w-full flex items-center gap-3 p-2 rounded-md opacity-40 cursor-not-allowed select-none"
+                >
+                  <div className="h-10 w-10 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                    {m.image ? (
+                      <img src={m.image} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">🎬</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-foreground truncate">
+                      {m.title}
+                      {m.year && <span className="text-muted-foreground"> ({m.year})</span>}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">Not connected</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {remoteMoviesLoading && shouldShowList && (
+          <div className="px-1 py-2 text-xs text-muted-foreground inline-flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" /> Searching TMDB…
+          </div>
+        )}
       </div>
     </div>
   );
