@@ -341,18 +341,20 @@ export const getHint = createServerFn({ method: "POST" })
 
     if (!shortest) return { hint: null, reason: "No path found within 6 degrees." };
 
-    // Find where the user's chain diverges from canonical shortest, suggest next step.
+    // Find where the user's chain joins the canonical path.
     const cur = data.currentChain;
     const lastUser = cur[cur.length - 1];
-    // If user's last step is on the canonical path, suggest the next canonical step.
     const idx = shortest.findIndex(
       (s) => s.kind === lastUser.kind && s.id === (lastUser as { id: number }).id,
     );
     if (idx >= 0 && idx < shortest.length - 1) {
       return { hint: shortest[idx + 1], reason: "Try this next step." };
     }
-    // Otherwise: suggest a canonical second step (movie after Actor A).
-    return { hint: shortest[1] ?? null, reason: "Consider this movie as a starting bridge." };
+    return {
+      hint: null,
+      reason:
+        "Your chain has wandered off the shortest known path — remove a step or give up to see the answer.",
+    };
   });
 
 // ============== giveUp ==============
