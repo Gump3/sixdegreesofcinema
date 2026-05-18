@@ -75,6 +75,33 @@ function HomePage() {
     }
   }
 
+  async function handleStreak() {
+    setError(null);
+    const finalName = (draftName || username).trim();
+    if (finalName) {
+      if (finalName.length > 24) {
+        setError("Username must be 24 characters or fewer.");
+        return;
+      }
+      setUsername(finalName);
+    }
+    setStreakLoading(true);
+    try {
+      const settings = { mode, difficulty, generation };
+      const res = await createGameFn({ data: settings });
+      streak.start(res.gameId, settings);
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to start streak.");
+      setStreakLoading(false);
+    }
+  }
+
+  async function handleContinueStreak() {
+    if (!streak.state.currentGameId) return;
+    navigate({ to: "/game/$gameId", params: { gameId: streak.state.currentGameId } });
+  }
+
   const todayLabel = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     month: "short",
