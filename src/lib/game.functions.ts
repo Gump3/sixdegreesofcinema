@@ -147,13 +147,119 @@ export const createGame = createServerFn({ method: "POST" })
     return { gameId: row.id, actorA: aRec, actorB: bRec, mode, difficulty };
   });
 
+// ============== getDailyChallenge ==============
+// Returns the daily challenge game for today (UTC). Creates one if it doesn't
+// exist yet — same pair for everyone on the same day.
+function seededInt(seed: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export const getDailyChallenge = createServerFn({ method: "POST" }).handler(async () => {
+  // Use UTC date so everyone shares the same daily.
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  // Already created?
+  const existing = await supabaseAdmin
+    .from("games")
+    .select("id, actor_a, actor_b, mode, difficulty, daily_date")
+    .eq("daily_date", today)
+    .maybeSingle();
+  if (existing.data) {
+    return {
+      gameId: existing.data.id,
+      actorA: existing.data.actor_a as unknown as ActorRecord,
+      actorB: existing.data.actor_b as unknown as ActorRecord,
+      mode: existing.data.mode as "noob" | "buff",
+      difficulty: existing.data.difficulty as "easy" | "medium" | "hard",
+      date: today,
+    };
+  }
+
+  // Build pool deterministically (top stars, all eras).
+  const pool: Person[] = [];
+  for (const page of [1, 2, 3]) {
+    try {
+      const r = await getPopularPeoplePage(page);
+      pool.push(...r.filter((p) => p.known_for_department === "Acting"));
+    } catch { /* ignore */ }
+  }
+  if (pool.length < 2) throw new Error("TMDB unavailable for daily challenge.");
+  const seen = new Set<number>();
+  const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+
+  const rand = mulberry32(seededInt(today));
+  const ia = Math.floor(rand() * unique.length);
+  let ib = Math.floor(rand() * unique.length);
+  if (ib === ia) ib = (ib + 1) % unique.length;
+  const actorA = unique[ia];
+  const actorB = unique[ib];
+
+  const aRec = asActor(actorA);
+  const bRec = asActor(actorB);
+
+  // Insert; if another request inserted first, fall back to that row.
+  const ins = await supabaseAdmin
+    .from("games")
+    .insert({
+      actor_a: aRec as never,
+      actor_b: bRec as never,
+      difficulty: "medium",
+      mode: "noob",
+      is_daily: true,
+      daily_date: today,
+    })
+    .select("id")
+    .single();
+
+  if (ins.error) {
+    const retry = await supabaseAdmin
+      .from("games")
+      .select("id, actor_a, actor_b, mode, difficulty")
+      .eq("daily_date", today)
+      .single();
+    if (retry.error || !retry.data) throw new Error(`Failed to create daily: ${ins.error.message}`);
+    return {
+      gameId: retry.data.id,
+      actorA: retry.data.actor_a as unknown as ActorRecord,
+      actorB: retry.data.actor_b as unknown as ActorRecord,
+      mode: retry.data.mode as "noob" | "buff",
+      difficulty: retry.data.difficulty as "easy" | "medium" | "hard",
+      date: today,
+    };
+  }
+
+  return {
+    gameId: ins.data.id,
+    actorA: aRec,
+    actorB: bRec,
+    mode: "noob" as const,
+    difficulty: "medium" as const,
+    date: today,
+  };
+});
+
 // ============== loadGame ==============
 export const loadGame = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ gameId: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { data: row, error } = await supabaseAdmin
       .from("games")
-      .select("id, actor_a, actor_b, mode, difficulty")
+      .select("id, actor_a, actor_b, mode, difficulty, is_daily, daily_date")
       .eq("id", data.gameId)
       .single();
     if (error || !row) throw new Error("Game not found");
@@ -163,6 +269,8 @@ export const loadGame = createServerFn({ method: "GET" })
       actorB: row.actor_b as unknown as ActorRecord,
       mode: row.mode as "noob" | "buff",
       difficulty: row.difficulty as "easy" | "medium" | "hard",
+      isDaily: Boolean(row.is_daily),
+      dailyDate: (row.daily_date as string | null) ?? null,
     };
   });
 

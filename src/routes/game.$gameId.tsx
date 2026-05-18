@@ -3,12 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Check,
   ChevronRight,
   Film,
   Flag,
   Lightbulb,
   Loader2,
   Plus,
+  Share2,
   Trophy,
   User,
   X,
@@ -37,6 +39,8 @@ type GameData = {
   actorB: { id: number; name: string; image: string | null };
   mode: "noob" | "buff";
   difficulty: "easy" | "medium" | "hard";
+  isDaily: boolean;
+  dailyDate: string | null;
 };
 
 type ScoreEntry = {
@@ -261,6 +265,43 @@ function GameScreen() {
     }
   }
 
+  // Share helpers
+  const [shareCopied, setShareCopied] = useState<null | "link" | "result">(null);
+  async function copyText(text: string, kind: "link" | "result") {
+    try {
+      if (navigator.share && kind === "result") {
+        await navigator.share({ text }).catch(async () => {
+          await navigator.clipboard.writeText(text);
+        });
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
+      setShareCopied(kind);
+      setTimeout(() => setShareCopied(null), 1800);
+    } catch {
+      // ignore
+    }
+  }
+  function shareGameLink() {
+    if (!game) return;
+    const url = `${window.location.origin}/game/${game.gameId}`;
+    const text = game.isDaily
+      ? `🎬 Six Degrees of Cinema — Daily ${game.dailyDate}: ${game.actorA.name} ↔ ${game.actorB.name}. Can you connect them?\n${url}`
+      : `🎬 Six Degrees of Cinema: connect ${game.actorA.name} ↔ ${game.actorB.name} in 6 degrees or fewer.\n${url}`;
+    void copyText(text, "link");
+  }
+  function shareResult() {
+    if (!game || !result?.valid) return;
+    const url = `${window.location.origin}/game/${game.gameId}`;
+    const tag = game.isDaily ? `Daily ${game.dailyDate}` : `${game.mode === "buff" ? "Movie Buff" : "Movie Noob"} · ${game.difficulty}`;
+    const text =
+      `🎬 Six Degrees of Cinema — ${tag}\n` +
+      `${game.actorA.name} ↔ ${game.actorB.name}\n` +
+      `Solved in ${result.degrees}° · ${result.score} pts${hintsUsed ? ` (${hintsUsed} hint${hintsUsed === 1 ? "" : "s"})` : ""}\n` +
+      `Play: ${url}`;
+    void copyText(text, "result");
+  }
+
   if (loadErr) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
@@ -286,13 +327,35 @@ function GameScreen() {
     <main className="min-h-screen px-4 py-6 pb-32">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-2 mb-6">
           <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground text-sm">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Home
           </Link>
-          <div className="text-xs uppercase tracking-widest text-gold">
-            {game.mode === "buff" ? "Movie Buff" : "Movie Noob"} · {game.difficulty}
+          <div className="flex items-center gap-2">
+            {game.isDaily && (
+              <span className="text-[10px] uppercase tracking-widest text-gold-bright border border-gold/50 rounded px-2 py-0.5 bg-secondary">
+                Daily · {game.dailyDate}
+              </span>
+            )}
+            <span className="text-xs uppercase tracking-widest text-gold hidden sm:inline">
+              {game.mode === "buff" ? "Movie Buff" : "Movie Noob"} · {game.difficulty}
+            </span>
+            <button
+              onClick={shareGameLink}
+              className="inline-flex items-center gap-1 text-xs border border-border rounded-md px-2 py-1 text-muted-foreground hover:text-foreground hover:border-gold/40 transition"
+              title="Copy a link to this puzzle"
+            >
+              {shareCopied === "link" ? (
+                <>
+                  <Check className="h-3 w-3 text-success" /> Copied
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-3 w-3" /> Share
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -455,10 +518,27 @@ function GameScreen() {
               </div>
             )}
 
-            <div className="mt-5 flex gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
+              {result.valid && (
+                <button
+                  onClick={shareResult}
+                  className="gradient-gold text-primary-foreground font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2"
+                  title="Share your result"
+                >
+                  {shareCopied === "result" ? (
+                    <>
+                      <Check className="h-4 w-4" /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4" /> Share result
+                    </>
+                  )}
+                </button>
+              )}
               <button
                 onClick={playAgain}
-                className="gradient-gold text-primary-foreground font-semibold py-2 px-4 rounded-md inline-flex items-center gap-2"
+                className={`${result.valid ? "border border-border text-foreground hover:bg-secondary" : "gradient-gold text-primary-foreground font-semibold"} py-2 px-4 rounded-md inline-flex items-center gap-2 text-sm`}
               >
                 <Film className="h-4 w-4" />
                 Play again

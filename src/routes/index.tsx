@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Film, Sparkles, Loader2 } from "lucide-react";
-import { createGame } from "@/lib/game.functions";
+import { Film, Sparkles, Loader2, CalendarDays } from "lucide-react";
+import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { GENERATION_META, type Generation } from "@/lib/types";
 
@@ -17,12 +17,14 @@ type Difficulty = "easy" | "medium" | "hard";
 function HomePage() {
   const navigate = useNavigate();
   const createGameFn = useServerFn(createGame);
+  const dailyFn = useServerFn(getDailyChallenge);
   const [username, setUsername, hydrated] = useLocalStorage<string>("sdh:username", "");
   const [draftName, setDraftName] = useState("");
   const [mode, setMode] = useLocalStorage<Mode>("sdh:mode", "noob");
   const [difficulty, setDifficulty] = useLocalStorage<Difficulty>("sdh:difficulty", "easy");
   const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
   const [loading, setLoading] = useState(false);
+  const [dailyLoading, setDailyLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -50,6 +52,32 @@ function HomePage() {
     }
   }
 
+  async function handleDaily() {
+    setError(null);
+    const finalName = (draftName || username).trim();
+    if (finalName) {
+      if (finalName.length > 24) {
+        setError("Username must be 24 characters or fewer.");
+        return;
+      }
+      setUsername(finalName);
+    }
+    setDailyLoading(true);
+    try {
+      const res = await dailyFn();
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load daily challenge.");
+      setDailyLoading(false);
+    }
+  }
+
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-xl">
@@ -70,6 +98,36 @@ function HomePage() {
             <span className="text-gold">directing</span> credits.
           </p>
         </div>
+
+        {/* Daily Challenge */}
+        <button
+          onClick={handleDaily}
+          disabled={dailyLoading}
+          className="w-full mb-5 group relative overflow-hidden rounded-xl border border-gold/40 bg-gradient-to-br from-secondary to-card p-5 text-left shadow-gold transition hover:border-gold disabled:opacity-60"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full gradient-gold text-primary-foreground">
+              {dailyLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <CalendarDays className="h-5 w-5" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-display text-lg text-gold-bright">Today's Daily</span>
+                <span className="text-[10px] uppercase tracking-widest text-gold/80 border border-gold/40 rounded px-1.5 py-0.5">
+                  New
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                One puzzle. Same pair worldwide. {todayLabel}.
+              </div>
+            </div>
+            <div className="text-gold-bright text-xl">→</div>
+          </div>
+        </button>
+
 
         {/* Card */}
         <div className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-2xl">
