@@ -39,6 +39,8 @@ type GameData = {
   actorB: { id: number; name: string; image: string | null };
   mode: "noob" | "buff";
   difficulty: "easy" | "medium" | "hard";
+  isDaily: boolean;
+  dailyDate: string | null;
 };
 
 type ScoreEntry = {
