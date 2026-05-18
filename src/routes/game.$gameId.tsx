@@ -447,7 +447,7 @@ function GameScreen() {
                 {chain.length > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
                 <button
                   onClick={() => setPickerOpen(true)}
-                  disabled={pickerOpen || degreesUsed >= 6 || (lastStep?.kind === "person" && degreesUsed >= 6)}
+                  disabled={pickerOpen || (nextKind === "movie" && degreesUsed >= 6)}
                   className="inline-flex items-center gap-1 border border-dashed border-gold/60 text-gold-bright rounded-md px-3 py-2 text-xs hover:bg-secondary disabled:opacity-50"
                 >
                   <Plus className="h-3 w-3" />
