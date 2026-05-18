@@ -29,6 +29,7 @@ import { PathDisplay } from "@/components/PathDisplay";
 import { DebugPanel } from "@/components/DebugPanel";
 import type { ChainStep } from "@/lib/types";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useStreak } from "@/hooks/use-streak";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: GameScreen,
