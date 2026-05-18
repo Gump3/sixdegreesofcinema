@@ -510,12 +510,22 @@ export async function findAlternatePaths(
     .filter((s, i) => s.kind === "person" && i !== 0 && i !== primary.length - 1)
     .map((s) => (s as Extract<ChainStep, { kind: "person" }>).id);
 
-  // Tight per-alternate budget so a slow alternate can't blow the whole request.
-  for (const blockId of intermediates) {
+  const primaryMovies = primary
+    .filter((s) => s.kind === "movie")
+    .map((s) => (s as Extract<ChainStep, { kind: "movie" }>).id);
+
+  // Build attempt list: first try excluding each movie used in the primary
+  // (yields a different path even when there are no intermediate persons),
+  // then try excluding each intermediate person.
+  const attempts: Array<{ persons?: Set<number>; movies?: Set<number> }> = [];
+  for (const mId of primaryMovies) attempts.push({ movies: new Set([mId]) });
+  for (const pId of intermediates) attempts.push({ persons: new Set([pId]) });
+
+  for (const a of attempts) {
     if (alternates.length >= count) break;
-    const exclude = new Set<number>([blockId]);
     const alt = await findShortestPath(personAId, personBId, {
-      excludePersonIds: exclude,
+      excludePersonIds: a.persons,
+      excludeMovieIds: a.movies,
       maxDepth: 4,
       budgetMs: 12_000,
       maxTmdbCalls: 200,
