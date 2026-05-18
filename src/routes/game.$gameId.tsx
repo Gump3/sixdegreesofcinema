@@ -461,10 +461,12 @@ function GameScreen() {
                 Play again
               </button>
               <button
-                onClick={() => router.invalidate()}
-                className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary"
+                onClick={newPair}
+                disabled={refreshing}
+                className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
               >
-                Refresh
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                New pair
               </button>
             </div>
           </div>
