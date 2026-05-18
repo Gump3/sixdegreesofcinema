@@ -477,10 +477,16 @@ export async function findAlternatePaths(
     .filter((s, i) => s.kind === "person" && i !== 0 && i !== primary.length - 1)
     .map((s) => (s as Extract<ChainStep, { kind: "person" }>).id);
 
+  // Tight per-alternate budget so a slow alternate can't blow the whole request.
   for (const blockId of intermediates) {
     if (alternates.length >= count) break;
     const exclude = new Set<number>([blockId]);
-    const alt = await findShortestPath(personAId, personBId, { excludePersonIds: exclude, maxDepth: 6 });
+    const alt = await findShortestPath(personAId, personBId, {
+      excludePersonIds: exclude,
+      maxDepth: 4,
+      budgetMs: 8_000,
+      maxTmdbCalls: 80,
+    });
     if (!alt) continue;
     const sig = signaturePath(alt);
     if (seenSignatures.has(sig)) continue;
