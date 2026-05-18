@@ -347,8 +347,8 @@ export const getAlternatesFn = createServerFn({ method: "POST" })
       const actorB = game.data.actor_b as unknown as ActorRecord;
       shortest = await findShortestPath(actorA.id, actorB.id, {
         maxDepth: 4,
-        budgetMs: 20_000,
-        maxTmdbCalls: 200,
+        budgetMs: 22_000,
+        maxTmdbCalls: 500,
       });
       alternates = shortest ? await findAlternatePaths(actorA.id, actorB.id, 2, shortest) : [];
       await supabaseAdmin
@@ -389,7 +389,7 @@ export const getHint = createServerFn({ method: "POST" })
     // Compute (and cache) the canonical shortest path if not yet stored.
     let shortest = game.data.shortest_path as unknown as ChainStep[] | null;
     if (!shortest) {
-      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 4, budgetMs: 20_000, maxTmdbCalls: 200 });
+      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 4, budgetMs: 22_000, maxTmdbCalls: 500 });
       if (shortest) {
         await supabaseAdmin
           .from("games")
@@ -434,7 +434,7 @@ export const giveUp = createServerFn({ method: "POST" })
     let alternates = game.data.alternates as unknown as ChainStep[][] | null;
 
     if (!shortest) {
-      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 4, budgetMs: 20_000, maxTmdbCalls: 200 });
+      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 4, budgetMs: 22_000, maxTmdbCalls: 500 });
       alternates = shortest ? await findAlternatePaths(actorA.id, actorB.id, 2, shortest) : [];
       await supabaseAdmin
         .from("games")
