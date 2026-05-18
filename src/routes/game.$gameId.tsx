@@ -327,13 +327,35 @@ function GameScreen() {
     <main className="min-h-screen px-4 py-6 pb-32">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-2 mb-6">
           <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground text-sm">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Home
           </Link>
-          <div className="text-xs uppercase tracking-widest text-gold">
-            {game.mode === "buff" ? "Movie Buff" : "Movie Noob"} · {game.difficulty}
+          <div className="flex items-center gap-2">
+            {game.isDaily && (
+              <span className="text-[10px] uppercase tracking-widest text-gold-bright border border-gold/50 rounded px-2 py-0.5 bg-secondary">
+                Daily · {game.dailyDate}
+              </span>
+            )}
+            <span className="text-xs uppercase tracking-widest text-gold hidden sm:inline">
+              {game.mode === "buff" ? "Movie Buff" : "Movie Noob"} · {game.difficulty}
+            </span>
+            <button
+              onClick={shareGameLink}
+              className="inline-flex items-center gap-1 text-xs border border-border rounded-md px-2 py-1 text-muted-foreground hover:text-foreground hover:border-gold/40 transition"
+              title="Copy a link to this puzzle"
+            >
+              {shareCopied === "link" ? (
+                <>
+                  <Check className="h-3 w-3 text-success" /> Copied
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-3 w-3" /> Share
+                </>
+              )}
+            </button>
           </div>
         </div>
 
