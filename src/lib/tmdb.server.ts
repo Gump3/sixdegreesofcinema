@@ -261,7 +261,6 @@ export async function searchPeople(query: string): Promise<Person[]> {
   );
   return (data.results ?? [])
     .filter((p) => p.known_for_department === "Acting" || p.known_for_department === "Directing")
-    .filter((p) => isHollywoodKnownFor(p.known_for))
     .slice(0, 10)
     .map((p) => ({
       id: p.id,
