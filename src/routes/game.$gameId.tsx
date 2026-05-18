@@ -265,6 +265,43 @@ function GameScreen() {
     }
   }
 
+  // Share helpers
+  const [shareCopied, setShareCopied] = useState<null | "link" | "result">(null);
+  async function copyText(text: string, kind: "link" | "result") {
+    try {
+      if (navigator.share && kind === "result") {
+        await navigator.share({ text }).catch(async () => {
+          await navigator.clipboard.writeText(text);
+        });
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
+      setShareCopied(kind);
+      setTimeout(() => setShareCopied(null), 1800);
+    } catch {
+      // ignore
+    }
+  }
+  function shareGameLink() {
+    if (!game) return;
+    const url = `${window.location.origin}/game/${game.gameId}`;
+    const text = game.isDaily
+      ? `🎬 Six Degrees of Cinema — Daily ${game.dailyDate}: ${game.actorA.name} ↔ ${game.actorB.name}. Can you connect them?\n${url}`
+      : `🎬 Six Degrees of Cinema: connect ${game.actorA.name} ↔ ${game.actorB.name} in 6 degrees or fewer.\n${url}`;
+    void copyText(text, "link");
+  }
+  function shareResult() {
+    if (!game || !result?.valid) return;
+    const url = `${window.location.origin}/game/${game.gameId}`;
+    const tag = game.isDaily ? `Daily ${game.dailyDate}` : `${game.mode === "buff" ? "Movie Buff" : "Movie Noob"} · ${game.difficulty}`;
+    const text =
+      `🎬 Six Degrees of Cinema — ${tag}\n` +
+      `${game.actorA.name} ↔ ${game.actorB.name}\n` +
+      `Solved in ${result.degrees}° · ${result.score} pts${hintsUsed ? ` (${hintsUsed} hint${hintsUsed === 1 ? "" : "s"})` : ""}\n` +
+      `Play: ${url}`;
+    void copyText(text, "result");
+  }
+
   if (loadErr) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
