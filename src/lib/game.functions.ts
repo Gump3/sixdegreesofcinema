@@ -409,7 +409,7 @@ export const giveUp = createServerFn({ method: "POST" })
     let alternates = game.data.alternates as unknown as ChainStep[][] | null;
 
     if (!shortest) {
-      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 6 });
+      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 4, budgetMs: 20_000, maxTmdbCalls: 200 });
       alternates = shortest ? await findAlternatePaths(actorA.id, actorB.id, 2, shortest) : [];
       await supabaseAdmin
         .from("games")
