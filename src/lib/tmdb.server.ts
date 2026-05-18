@@ -360,9 +360,13 @@ export async function findShortestPath(
     maxTmdbCalls?: number;
   } = {},
 ): Promise<ChainStep[] | null> {
-  // `maxDepth` is the maximum number of DEGREES (movies) in the chain.
-  // Each BFS iteration expands one person → movie → person hop, i.e. adds
-  // one degree to the path. So we iterate exactly `maxDepth` times.
+  // Bidirectional BFS: expand from A and B alternately (smaller frontier
+  // first) and stop as soon as a person is reached from both sides. This
+  // gives roughly sqrt(N) of the calls a one-sided BFS would need, so we
+  // can actually cover paths up to ~4 degrees within our TMDB budget.
+  //
+  // `maxDepth` is the total number of DEGREES (movies) allowed in the
+  // final path. Side A hops + side B hops sum to that.
   const maxDepth = opts.maxDepth ?? 4;
   const movieCastCap = opts.movieCastCap ?? 12;
   const personMovieCap = opts.personMovieCap ?? 20;
@@ -371,96 +375,131 @@ export async function findShortestPath(
   const deadline = Date.now() + (opts.budgetMs ?? 22_000);
   const startCalls = tmdbCallsThisProcess;
   const maxCalls = opts.maxTmdbCalls ?? 400;
-  const callsExceeded = () => tmdbCallsThisProcess - startCalls >= maxCalls;
-  const timeExceeded = () => Date.now() > deadline;
+  const budgetExceeded = () =>
+    Date.now() > deadline || tmdbCallsThisProcess - startCalls >= maxCalls;
 
   if (personAId === personBId) return null;
+
+  type Back = { prevPersonId: number; viaMovieId: number } | null;
+  const visitedA = new Map<number, Back>([[personAId, null]]);
+  const visitedB = new Map<number, Back>([[personBId, null]]);
+  let frontierA: number[] = [personAId];
+  let frontierB: number[] = [personBId];
+  let depthA = 0;
+  let depthB = 0;
+  let meet: number | null = null;
+
+  async function expandLayer(
+    frontier: number[],
+    visitedSelf: Map<number, Back>,
+    visitedOther: Map<number, Back>,
+  ): Promise<{ next: number[]; meet: number | null }> {
+    const next: number[] = [];
+    for (const pid of frontier) {
+      if (budgetExceeded()) return { next, meet: null };
+      let credits: { acting: Movie[]; directing: Movie[] };
+      try {
+        credits = await getPersonCredits(pid);
+      } catch {
+        continue;
+      }
+      const movies = [...credits.acting, ...credits.directing]
+        .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+        .slice(0, personMovieCap)
+        .filter((m) => !excludeMovies.has(m.id));
+      for (const m of movies) {
+        if (budgetExceeded()) return { next, meet: null };
+        let mc: { cast: Person[]; directors: Person[] };
+        try {
+          mc = await getMovieCredits(m.id);
+        } catch {
+          continue;
+        }
+        const peoplePool = [
+          ...mc.cast
+            .slice()
+            .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+            .slice(0, movieCastCap),
+          ...mc.directors,
+        ];
+        for (const c of peoplePool) {
+          if (exclude.has(c.id)) continue;
+          if (visitedSelf.has(c.id)) continue;
+          visitedSelf.set(c.id, { prevPersonId: pid, viaMovieId: m.id });
+          if (visitedOther.has(c.id)) {
+            return { next, meet: c.id };
+          }
+          next.push(c.id);
+        }
+      }
+    }
+    return { next, meet: null };
+  }
+
+  while (
+    frontierA.length > 0 &&
+    frontierB.length > 0 &&
+    depthA + depthB < maxDepth
+  ) {
+    if (budgetExceeded()) break;
+    // Always expand the smaller frontier next to keep cost balanced.
+    if (frontierA.length <= frontierB.length) {
+      const r = await expandLayer(frontierA, visitedA, visitedB);
+      frontierA = r.next;
+      depthA++;
+      if (r.meet !== null) {
+        meet = r.meet;
+        break;
+      }
+    } else {
+      const r = await expandLayer(frontierB, visitedB, visitedA);
+      frontierB = r.next;
+      depthB++;
+      if (r.meet !== null) {
+        meet = r.meet;
+        break;
+      }
+    }
+  }
+
+  if (meet === null) return null;
+
+  // Reconstruct A-side: walk visitedA from meet back to personA, then reverse.
+  const path: Node[] = [];
+  {
+    const aChain: Node[] = [];
+    let cur: number | null = meet;
+    const guard = new Set<number>();
+    while (cur !== null && !guard.has(cur)) {
+      guard.add(cur);
+      aChain.push({ kind: "person", id: cur });
+      const back = visitedA.get(cur);
+      if (!back) break;
+      aChain.push({ kind: "movie", id: back.viaMovieId });
+      cur = back.prevPersonId;
+    }
+    aChain.reverse();
+    path.push(...aChain);
+  }
+  // Reconstruct B-side: walk visitedB from meet → B and append (skipping meet).
+  {
+    let cur: number | null = meet;
+    const guard = new Set<number>([meet]);
+    while (cur !== null) {
+      const back = visitedB.get(cur);
+      if (!back) break;
+      path.push({ kind: "movie", id: back.viaMovieId });
+      if (guard.has(back.prevPersonId)) break;
+      guard.add(back.prevPersonId);
+      path.push({ kind: "person", id: back.prevPersonId });
+      cur = back.prevPersonId;
+    }
+  }
 
   const [aDetails, bDetails] = await Promise.all([
     tmdb<Person>(`/person/${personAId}`, {}, "credits"),
     tmdb<Person>(`/person/${personBId}`, {}, "credits"),
   ]);
-
-  const parents = new Map<string, { node: Node; via?: Node }>();
-  parents.set(nodeKey({ kind: "person", id: personAId }), {
-    node: { kind: "person", id: personAId },
-  });
-
-  let frontier: Array<{ kind: "person"; id: number }> = [{ kind: "person", id: personAId }];
-  let found: { kind: "person"; id: number } | null = null;
-
-  outer: for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth++) {
-    if (timeExceeded() || callsExceeded()) break;
-    const nextFrontier: Array<{ kind: "person"; id: number }> = [];
-    const movieIdsThisLevel = new Map<number, number>();
-
-    for (const p of frontier) {
-      if (timeExceeded() || callsExceeded()) break outer;
-      let credits: { acting: Movie[]; directing: Movie[] };
-      try {
-        credits = await getPersonCredits(p.id);
-      } catch {
-        continue;
-      }
-      const combined = [...credits.acting, ...credits.directing]
-        .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
-        .slice(0, personMovieCap);
-      for (const m of combined) {
-        if (excludeMovies.has(m.id)) continue;
-        const mKey = nodeKey({ kind: "movie", id: m.id });
-        if (parents.has(mKey)) continue;
-        parents.set(mKey, { node: { kind: "movie", id: m.id }, via: p });
-        movieIdsThisLevel.set(m.id, p.id);
-      }
-    }
-
-    for (const [movieId] of movieIdsThisLevel) {
-      if (timeExceeded() || callsExceeded()) break outer;
-      let mc: { cast: Person[]; directors: Person[] };
-      try {
-        mc = await getMovieCredits(movieId);
-      } catch {
-        continue;
-      }
-      const peoplePool = [
-        ...mc.cast
-          .slice()
-          .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
-          .slice(0, movieCastCap),
-        ...mc.directors,
-      ];
-      for (const p of peoplePool) {
-        if (exclude.has(p.id)) continue;
-        const pKey = nodeKey({ kind: "person", id: p.id });
-        if (parents.has(pKey)) continue;
-        parents.set(pKey, { node: { kind: "person", id: p.id }, via: { kind: "movie", id: movieId } });
-        if (p.id === personBId) {
-          found = { kind: "person", id: p.id };
-          break outer;
-        }
-        nextFrontier.push({ kind: "person", id: p.id });
-      }
-    }
-
-    frontier = nextFrontier;
-  }
-
-  if (!found) return null;
-
-  // Reconstruct
-  const path: Node[] = [];
-  let cur: Node | undefined = found;
-  const guard = new Set<string>();
-  while (cur) {
-    if (guard.has(nodeKey(cur))) break;
-    guard.add(nodeKey(cur));
-    path.push(cur);
-    const rec = parents.get(nodeKey(cur));
-    cur = rec?.via;
-  }
-  path.reverse();
-
-  // Hydrate path with names/images
   return hydratePath(path, { [personAId]: aDetails, [personBId]: bDetails });
 }
 
