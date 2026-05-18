@@ -59,7 +59,7 @@ function HomePage() {
           <h1 className="font-display text-5xl sm:text-6xl text-gold-bright leading-none">
             Six Degrees
           </h1>
-          <p className="font-display text-2xl text-foreground mt-1 italic">Hollywood</p>
+          <p className="font-display text-2xl text-foreground mt-1 italic">of Cinema</p>
           <p className="text-muted-foreground mt-4 max-w-md mx-auto text-sm">
             Connect any two stars in six degrees or fewer. Use only{" "}
             <span className="text-gold">acting</span> and{" "}

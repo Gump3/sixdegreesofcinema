@@ -234,9 +234,27 @@ export async function getMovieCredits(movieId: number): Promise<{
   return { cast, directors };
 }
 
+type KnownForItem = { media_type?: string; original_language?: string; release_date?: string };
+
+/**
+ * Hollywood eligibility: the person's TMDB `known_for` array must contain
+ * at least one English-language theatrical movie with a past release date.
+ * Keeps the pool focused on actors a Hollywood player can recognize.
+ */
+function isHollywoodKnownFor(knownFor: KnownForItem[] | undefined): boolean {
+  if (!knownFor || knownFor.length === 0) return false;
+  return knownFor.some(
+    (k) =>
+      k.media_type === "movie" &&
+      k.original_language === "en" &&
+      !!k.release_date &&
+      Date.parse(k.release_date) <= Date.now(),
+  );
+}
+
 export async function searchPeople(query: string): Promise<Person[]> {
   if (!query.trim()) return [];
-  const data = await tmdb<{ results?: Person[] }>(
+  const data = await tmdb<{ results?: (Person & { known_for?: KnownForItem[] })[] }>(
     `/search/person`,
     { query, include_adult: "false" },
     "search",
@@ -254,14 +272,14 @@ export async function searchPeople(query: string): Promise<Person[]> {
 }
 
 export async function getPopularPeoplePage(page: number): Promise<Person[]> {
-  const data = await tmdb<{ results?: Person[] }>(
+  const data = await tmdb<{ results?: (Person & { known_for?: KnownForItem[] })[] }>(
     `/person/popular`,
     { page },
     "person_popular",
   );
-  return (data.results ?? []).filter(
-    (p) => p.known_for_department === "Acting" || p.known_for_department === "Directing",
-  );
+  return (data.results ?? [])
+    .filter((p) => p.known_for_department === "Acting" || p.known_for_department === "Directing")
+    .filter((p) => isHollywoodKnownFor(p.known_for));
 }
 
 // ============== Public DTO helpers (with full image URLs) ==============
@@ -301,22 +319,35 @@ function nodeKey(n: Node): string {
 export async function findShortestPath(
   personAId: number,
   personBId: number,
-  opts: { maxDepth?: number; movieCastCap?: number; personMovieCap?: number; excludePersonIds?: Set<number> } = {},
+  opts: {
+    maxDepth?: number;
+    movieCastCap?: number;
+    personMovieCap?: number;
+    excludePersonIds?: Set<number>;
+    budgetMs?: number;
+    maxTmdbCalls?: number;
+  } = {},
 ): Promise<ChainStep[] | null> {
-  const maxDepth = opts.maxDepth ?? 6;
-  const movieCastCap = opts.movieCastCap ?? 15;
-  const personMovieCap = opts.personMovieCap ?? 30;
+  // Tight defaults so the BFS finishes inside a Worker request window.
+  // Popular Hollywood pairs almost always connect within 2–3 degrees;
+  // depth=4 keeps us safe without ballooning the call count.
+  const maxDepth = opts.maxDepth ?? 4;
+  const movieCastCap = opts.movieCastCap ?? 6;
+  const personMovieCap = opts.personMovieCap ?? 10;
   const exclude = opts.excludePersonIds ?? new Set<number>();
+  const deadline = Date.now() + (opts.budgetMs ?? 20_000);
+  const startCalls = tmdbCallsThisProcess;
+  const maxCalls = opts.maxTmdbCalls ?? 200;
+  const callsExceeded = () => tmdbCallsThisProcess - startCalls >= maxCalls;
+  const timeExceeded = () => Date.now() > deadline;
 
   if (personAId === personBId) return null;
 
-  // Pre-fetch person details for endpoints (for DTOs)
   const [aDetails, bDetails] = await Promise.all([
     tmdb<Person>(`/person/${personAId}`, {}, "credits"),
     tmdb<Person>(`/person/${personBId}`, {}, "credits"),
   ]);
 
-  // BFS, where each "level" is a Person. We expand person → movies → next persons in one step.
   const parents = new Map<string, { node: Node; via?: Node }>();
   parents.set(nodeKey({ kind: "person", id: personAId }), {
     node: { kind: "person", id: personAId },
@@ -326,11 +357,12 @@ export async function findShortestPath(
   let found: { kind: "person"; id: number } | null = null;
 
   outer: for (let depth = 1; depth <= maxDepth / 2 + 0.5 && frontier.length > 0; depth++) {
+    if (timeExceeded() || callsExceeded()) break;
     const nextFrontier: Array<{ kind: "person"; id: number }> = [];
-    const movieIdsThisLevel = new Map<number, number>(); // movieId -> sourcePersonId
+    const movieIdsThisLevel = new Map<number, number>();
 
-    // Step 1: expand each person to their (capped) eligible movies
     for (const p of frontier) {
+      if (timeExceeded() || callsExceeded()) break outer;
       let credits: { acting: Movie[]; directing: Movie[] };
       try {
         credits = await getPersonCredits(p.id);
@@ -348,8 +380,8 @@ export async function findShortestPath(
       }
     }
 
-    // Step 2: expand each new movie to its (capped) cast+directors → next persons
     for (const [movieId] of movieIdsThisLevel) {
+      if (timeExceeded() || callsExceeded()) break outer;
       let mc: { cast: Person[]; directors: Person[] };
       try {
         mc = await getMovieCredits(movieId);
@@ -444,10 +476,16 @@ export async function findAlternatePaths(
     .filter((s, i) => s.kind === "person" && i !== 0 && i !== primary.length - 1)
     .map((s) => (s as Extract<ChainStep, { kind: "person" }>).id);
 
+  // Tight per-alternate budget so a slow alternate can't blow the whole request.
   for (const blockId of intermediates) {
     if (alternates.length >= count) break;
     const exclude = new Set<number>([blockId]);
-    const alt = await findShortestPath(personAId, personBId, { excludePersonIds: exclude, maxDepth: 6 });
+    const alt = await findShortestPath(personAId, personBId, {
+      excludePersonIds: exclude,
+      maxDepth: 4,
+      budgetMs: 8_000,
+      maxTmdbCalls: 80,
+    });
     if (!alt) continue;
     const sig = signaturePath(alt);
     if (seenSignatures.has(sig)) continue;

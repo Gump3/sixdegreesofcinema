@@ -67,13 +67,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Six Degrees: Hollywood" },
+      { title: "Six Degrees of Cinema" },
       {
         name: "description",
         content:
-          "Connect any two movie stars in six degrees or fewer using acting and directing credits. A daily Hollywood puzzle.",
+          "Connect any two movie stars in six degrees or fewer using acting and directing credits. A Hollywood puzzle.",
       },
-      { property: "og:title", content: "Six Degrees: Hollywood" },
+      { property: "og:title", content: "Six Degrees of Cinema" },
       {
         property: "og:description",
         content: "Connect any two movie stars in six degrees or fewer.",

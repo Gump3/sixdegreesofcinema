@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  createGame,
   getAlternatesFn,
   getHint,
   giveUp,
@@ -51,13 +52,13 @@ type ScoreEntry = {
 
 function GameScreen() {
   const { gameId } = Route.useParams();
-  const router = useRouter();
   const navigate = useNavigate();
   const loadGameFn = useServerFn(loadGame);
   const validateFn = useServerFn(validateChain);
   const hintFn = useServerFn(getHint);
   const giveUpFn = useServerFn(giveUp);
   const alternatesFn = useServerFn(getAlternatesFn);
+  const createGameFn = useServerFn(createGame);
 
   const isDebug =
     typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "true";
@@ -240,6 +241,19 @@ function GameScreen() {
 
   function playAgain() {
     navigate({ to: "/" });
+  }
+
+  const [refreshing, setRefreshing] = useState(false);
+  async function newPair() {
+    if (!game || refreshing) return;
+    setRefreshing(true);
+    try {
+      const res = await createGameFn({ data: { mode: game.mode, difficulty: game.difficulty } });
+      navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
+    } catch (e) {
+      setValidationLog((l) => [...l, `New pair error: ${(e as Error).message}`]);
+      setRefreshing(false);
+    }
   }
 
   if (loadErr) {
@@ -445,10 +459,12 @@ function GameScreen() {
                 Play again
               </button>
               <button
-                onClick={() => router.invalidate()}
-                className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary"
+                onClick={newPair}
+                disabled={refreshing}
+                className="border border-border text-foreground py-2 px-4 rounded-md text-sm hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
               >
-                Refresh
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                New pair
               </button>
             </div>
           </div>
