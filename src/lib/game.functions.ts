@@ -364,7 +364,7 @@ export const getHint = createServerFn({ method: "POST" })
     // Compute (and cache) the canonical shortest path if not yet stored.
     let shortest = game.data.shortest_path as unknown as ChainStep[] | null;
     if (!shortest) {
-      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 6 });
+      shortest = await findShortestPath(actorA.id, actorB.id, { maxDepth: 4, budgetMs: 20_000, maxTmdbCalls: 200 });
       if (shortest) {
         await supabaseAdmin
           .from("games")
