@@ -494,8 +494,8 @@ export async function findAlternatePaths(
     const alt = await findShortestPath(personAId, personBId, {
       excludePersonIds: exclude,
       maxDepth: 4,
-      budgetMs: 8_000,
-      maxTmdbCalls: 80,
+      budgetMs: 12_000,
+      maxTmdbCalls: 200,
     });
     if (!alt) continue;
     const sig = signaturePath(alt);
