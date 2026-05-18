@@ -38,32 +38,56 @@ function asActor(p: Person): ActorRecord {
 }
 
 // ============== createGame ==============
+const GENERATION_RANGES: Record<string, [number, number] | null> = {
+  boomer: [1960, 1989],
+  genx: [1978, 2002],
+  millennial: [1992, 2015],
+  genz: [2008, new Date().getFullYear()],
+  all: null,
+};
+
 export const createGame = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         mode: z.enum(["noob", "buff"]).default("noob"),
         difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
+        generation: z.enum(["boomer", "genx", "millennial", "genz", "all"]).default("all"),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { mode, difficulty } = data;
+    const { mode, difficulty, generation } = data;
+    const eraRange = GENERATION_RANGES[generation] ?? null;
 
     // Pull a popularity pool. Hard mode digs deeper for less obvious picks.
-    const pages = difficulty === "hard" ? [1, 2, 3, 4, 5] : difficulty === "medium" ? [1, 2, 3] : [1, 2];
+    // When a generation filter is on, sweep more pages since filtering shrinks each page.
+    const basePages = difficulty === "hard" ? [1, 2, 3, 4, 5] : difficulty === "medium" ? [1, 2, 3] : [1, 2];
+    const pages = eraRange ? [...basePages, basePages[basePages.length - 1] + 1, basePages[basePages.length - 1] + 2, basePages[basePages.length - 1] + 3] : basePages;
     const pool: Person[] = [];
     for (const page of pages) {
       try {
-        const r = await getPopularPeoplePage(page);
+        const r = await getPopularPeoplePage(page, { eraRange });
         pool.push(...r.filter((p) => p.known_for_department === "Acting"));
       } catch {
         // ignore page errors
       }
     }
+    // Fallback: if the era filter starved the pool, retry without it.
+    if (pool.length < 2 && eraRange) {
+      for (const page of basePages) {
+        try {
+          const r = await getPopularPeoplePage(page);
+          pool.push(...r.filter((p) => p.known_for_department === "Acting"));
+        } catch {
+          // ignore
+        }
+      }
+    }
     if (pool.length < 2) {
       throw new Error("TMDB returned no candidates. Try again in a moment.");
     }
+
 
     // Deduplicate by id
     const seen = new Set<number>();

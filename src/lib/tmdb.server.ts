@@ -271,16 +271,27 @@ export async function searchPeople(query: string): Promise<Person[]> {
     }));
 }
 
-export async function getPopularPeoplePage(page: number): Promise<Person[]> {
+export async function getPopularPeoplePage(
+  page: number,
+  opts: { eraRange?: [number, number] | null } = {},
+): Promise<Person[]> {
   const data = await tmdb<{ results?: (Person & { known_for?: KnownForItem[] })[] }>(
     `/person/popular`,
     { page },
     "person_popular",
   );
+  const era = opts.eraRange ?? null;
+  const inEra = (k: KnownForItem) => {
+    if (!era || !k.release_date) return true;
+    const y = Number(k.release_date.slice(0, 4));
+    return !Number.isNaN(y) && y >= era[0] && y <= era[1];
+  };
   return (data.results ?? [])
     .filter((p) => p.known_for_department === "Acting" || p.known_for_department === "Directing")
-    .filter((p) => isHollywoodKnownFor(p.known_for));
+    .filter((p) => isHollywoodKnownFor(p.known_for))
+    .filter((p) => (era ? (p.known_for ?? []).some((k) => k.media_type === "movie" && k.original_language === "en" && inEra(k)) : true));
 }
+
 
 // ============== Public DTO helpers (with full image URLs) ==============
 export function personDto(p: Person) {

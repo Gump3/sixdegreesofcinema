@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Film, Sparkles, Loader2 } from "lucide-react";
 import { createGame } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { GENERATION_META, type Generation } from "@/lib/types";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
+
 
 type Mode = "noob" | "buff";
 type Difficulty = "easy" | "medium" | "hard";
@@ -19,7 +21,9 @@ function HomePage() {
   const [draftName, setDraftName] = useState("");
   const [mode, setMode] = useLocalStorage<Mode>("sdh:mode", "noob");
   const [difficulty, setDifficulty] = useLocalStorage<Difficulty>("sdh:difficulty", "easy");
+  const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
 
   const effectiveName = username || draftName;
@@ -38,7 +42,7 @@ function HomePage() {
     setUsername(finalName);
     setLoading(true);
     try {
-      const res = await createGameFn({ data: { mode, difficulty } });
+      const res = await createGameFn({ data: { mode, difficulty, generation } });
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start a game.");
@@ -105,7 +109,52 @@ function HomePage() {
             </div>
           </div>
 
+          {/* Generation */}
+          <div className="mt-6">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                Your era
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70">
+                Biases the actor pool
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {(Object.keys(GENERATION_META) as Generation[]).map((g) => {
+                const meta = GENERATION_META[g];
+                const active = generation === g;
+                return (
+                  <button
+                    key={g}
+                    onClick={() => setGeneration(g)}
+                    title={`${meta.sub} — ${meta.years}`}
+                    className={`group relative py-2 px-2 rounded-md border text-center transition ${
+                      active
+                        ? "border-gold bg-secondary shadow-gold"
+                        : "border-border hover:border-muted-foreground"
+                    }`}
+                  >
+                    <div className="text-lg leading-none">{meta.emoji}</div>
+                    <div
+                      className={`mt-1 text-[11px] font-semibold leading-tight ${
+                        active ? "text-gold-bright" : "text-foreground"
+                      }`}
+                    >
+                      {meta.label}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className="text-gold">{GENERATION_META[generation].label}</span>
+              {" — "}
+              {GENERATION_META[generation].sub}. {GENERATION_META[generation].years}.
+            </p>
+          </div>
+
           {/* Difficulty */}
+
           <div className="mt-6">
             <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
               Difficulty
