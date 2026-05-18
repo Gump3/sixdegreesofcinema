@@ -339,16 +339,16 @@ export async function findShortestPath(
     maxTmdbCalls?: number;
   } = {},
 ): Promise<ChainStep[] | null> {
-  // Tight defaults so the BFS finishes inside a Worker request window.
-  // Popular Hollywood pairs almost always connect within 2–3 degrees;
-  // depth=4 keeps us safe without ballooning the call count.
+  // `maxDepth` is the maximum number of DEGREES (movies) in the chain.
+  // Each BFS iteration expands one person → movie → person hop, i.e. adds
+  // one degree to the path. So we iterate exactly `maxDepth` times.
   const maxDepth = opts.maxDepth ?? 4;
-  const movieCastCap = opts.movieCastCap ?? 6;
-  const personMovieCap = opts.personMovieCap ?? 10;
+  const movieCastCap = opts.movieCastCap ?? 12;
+  const personMovieCap = opts.personMovieCap ?? 20;
   const exclude = opts.excludePersonIds ?? new Set<number>();
-  const deadline = Date.now() + (opts.budgetMs ?? 20_000);
+  const deadline = Date.now() + (opts.budgetMs ?? 22_000);
   const startCalls = tmdbCallsThisProcess;
-  const maxCalls = opts.maxTmdbCalls ?? 200;
+  const maxCalls = opts.maxTmdbCalls ?? 400;
   const callsExceeded = () => tmdbCallsThisProcess - startCalls >= maxCalls;
   const timeExceeded = () => Date.now() > deadline;
 
@@ -367,7 +367,7 @@ export async function findShortestPath(
   let frontier: Array<{ kind: "person"; id: number }> = [{ kind: "person", id: personAId }];
   let found: { kind: "person"; id: number } | null = null;
 
-  outer: for (let depth = 1; depth <= maxDepth / 2 + 0.5 && frontier.length > 0; depth++) {
+  outer: for (let depth = 1; depth <= maxDepth && frontier.length > 0; depth++) {
     if (timeExceeded() || callsExceeded()) break;
     const nextFrontier: Array<{ kind: "person"; id: number }> = [];
     const movieIdsThisLevel = new Map<number, number>();
