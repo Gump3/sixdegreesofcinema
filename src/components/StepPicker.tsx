@@ -4,6 +4,7 @@ import { Loader2, Search, X } from "lucide-react";
 import {
   getMoviePeopleFn,
   getPersonMoviesFn,
+  searchMoviesFn,
   searchPeopleFn,
 } from "@/lib/game.functions";
 
