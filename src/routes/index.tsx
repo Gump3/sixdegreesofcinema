@@ -14,6 +14,25 @@ import { SettingsModal } from "@/components/SettingsModal";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
+  head: () => ({
+    meta: [
+      { title: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
+      {
+        name: "description",
+        content:
+          "Daily Hollywood puzzle: connect two movie stars in six degrees or fewer using acting and directing credits.",
+      },
+      { property: "og:title", content: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
+      {
+        property: "og:description",
+        content:
+          "Daily Hollywood puzzle: connect two movie stars in six degrees or fewer using acting and directing credits.",
+      },
+      { property: "og:url", content: "/" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+  }),
 });
 
 
