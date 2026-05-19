@@ -356,6 +356,7 @@ function HomePage() {
           </ul>
         </details>
       </div>
+      <Footer />
     </main>
   );
 }
