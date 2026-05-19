@@ -567,20 +567,36 @@ export const getHint = createServerFn({ method: "POST" })
 
     if (!shortest) return { hint: null, reason: "No path found within 6 degrees." };
 
-    // Find where the user's chain joins the canonical path.
+    // Walk the user's chain from the end backwards: the deepest step that's
+    // also on the canonical shortest path becomes our anchor, and we suggest
+    // the next step from there. This makes Hint useful at ANY point in the
+    // game — even after the user has wandered off the optimal path.
     const cur = data.currentChain;
-    const lastUser = cur[cur.length - 1];
-    const idx = shortest.findIndex(
-      (s) => s.kind === lastUser.kind && s.id === (lastUser as { id: number }).id,
-    );
-    if (idx >= 0 && idx < shortest.length - 1) {
-      return { hint: shortest[idx + 1], reason: "Try this next step." };
+    for (let i = cur.length - 1; i >= 0; i--) {
+      const step = cur[i];
+      const idx = shortest.findIndex(
+        (s) => s.kind === step.kind && s.id === (step as { id: number }).id,
+      );
+      if (idx >= 0 && idx < shortest.length - 1) {
+        const wandered = i < cur.length - 1;
+        return {
+          hint: shortest[idx + 1],
+          reason: wandered
+            ? `You've drifted off the shortest path — try this next from ${
+                (step as { name?: string; title?: string }).name ??
+                (step as { title?: string }).title
+              }.`
+            : "Try this next step.",
+        };
+      }
     }
-    return {
-      hint: null,
-      reason:
-        "Your chain has wandered off the shortest known path — remove a step or give up to see the answer.",
-    };
+
+    // Fallback: chain shares nothing with the path (shouldn't happen since
+    // chain[0] is always Actor A = shortest[0]) — suggest the first move.
+    if (shortest.length >= 2) {
+      return { hint: shortest[1], reason: "Start with this move." };
+    }
+    return { hint: null, reason: "No further hint available." };
   });
 
 // ============== giveUp ==============
