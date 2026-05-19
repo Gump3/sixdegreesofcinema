@@ -43,6 +43,7 @@ type GameData = {
   difficulty: "easy" | "medium" | "hard";
   isDaily: boolean;
   dailyDate: string | null;
+  isBaconRound: boolean;
 };
 
 type ScoreEntry = {
