@@ -114,18 +114,18 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="bg-secondary/40 border border-border rounded-lg p-3">
-          <div className="flex items-stretch gap-1 justify-center flex-nowrap">
+        <div className="bg-secondary/40 border border-border rounded-lg p-2 sm:p-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex items-stretch gap-0.5 sm:gap-1 justify-start sm:justify-center">
             {visible.map(({ step, idx }, i) => (
-              <div key={idx} className="flex items-stretch gap-1 animate-fade-in">
+              <div key={idx} className="flex items-stretch gap-0.5 sm:gap-1 animate-fade-in shrink-0">
                 {i > 0 && (
-                  <div className="flex flex-col items-center justify-center min-w-[50px]">
+                  <div className="flex flex-col items-center justify-center shrink-0 px-0.5 sm:px-1">
                     {innerVisibleCount > 0 && (
-                      <div className="text-[9px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
+                      <div className="hidden sm:block text-[7px] sm:text-[9px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
                         {step.connector}
                       </div>
                     )}
-                    <ArrowRight className="h-5 w-5 text-gold mt-1" />
+                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gold mt-0.5 sm:mt-1" />
                   </div>
                 )}
                 <ChainCard step={step} />
