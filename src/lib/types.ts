@@ -40,7 +40,7 @@ export const GENERATION_META: Record<
   },
   all: {
     label: "All Eras",
-    sub: "No bias",
+    sub: "",
     years: "Any era",
     range: null,
     emoji: "🎬",

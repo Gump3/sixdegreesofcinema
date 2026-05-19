@@ -101,6 +101,68 @@
   --gold-bright: oklch(0.88 0.15 85);
 }
 
+/* ============ THEME: Black & White ============
+   Pure monochrome cinema. Strips gold accents, leaves everything in grayscale. */
+.theme-bw {
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.14 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.14 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.92 0 0);
+  --primary-foreground: oklch(0.10 0 0);
+  --secondary: oklch(0.20 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.95 0 0);
+  --accent-foreground: oklch(0.08 0 0);
+  --border: oklch(0.28 0 0);
+  --input: oklch(0.18 0 0);
+  --ring: oklch(0.85 0 0);
+  --gold: oklch(0.88 0 0);
+  --gold-bright: oklch(0.97 0 0);
+}
+.theme-bw body {
+  background-image:
+    radial-gradient(ellipse at top, oklch(0.18 0 0 / 0.6), transparent 60%),
+    radial-gradient(ellipse at bottom, oklch(0.12 0 0 / 0.4), transparent 70%);
+  filter: grayscale(100%);
+}
+
+/* ============ THEME: Michael Bay ============
+   Saturated teal-and-orange color grading. Subtle but recognizable. */
+.theme-michael-bay {
+  --background: oklch(0.13 0.04 220);
+  --foreground: oklch(0.97 0.02 70);
+  --card: oklch(0.18 0.06 220);
+  --card-foreground: oklch(0.97 0.02 70);
+  --popover: oklch(0.18 0.06 220);
+  --popover-foreground: oklch(0.97 0.02 70);
+  --primary: oklch(0.72 0.18 50);            /* warm orange */
+  --primary-foreground: oklch(0.12 0.02 220);
+  --secondary: oklch(0.24 0.08 220);
+  --secondary-foreground: oklch(0.97 0.02 70);
+  --muted: oklch(0.22 0.05 220);
+  --muted-foreground: oklch(0.72 0.04 70);
+  --accent: oklch(0.78 0.20 55);             /* explosive orange */
+  --accent-foreground: oklch(0.12 0.02 220);
+  --border: oklch(0.30 0.07 220);
+  --input: oklch(0.22 0.05 220);
+  --ring: oklch(0.72 0.18 50);
+  --gold: oklch(0.75 0.18 50);
+  --gold-bright: oklch(0.85 0.20 60);
+}
+.theme-michael-bay body {
+  background-image:
+    radial-gradient(ellipse at top, oklch(0.40 0.15 55 / 0.35), transparent 60%),
+    radial-gradient(ellipse at bottom, oklch(0.25 0.12 220 / 0.55), transparent 70%);
+}
+.theme-michael-bay .shadow-gold {
+  box-shadow: 0 8px 30px -8px oklch(0.72 0.18 50 / 0.5);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

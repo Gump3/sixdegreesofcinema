@@ -1,13 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Film, Sparkles, Loader2, CalendarDays, Flame, Trophy } from "lucide-react";
+import { Film, Sparkles, Loader2, CalendarDays, Flame, Trophy, BarChart3, HelpCircle, Settings } from "lucide-react";
 import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
 import { GENERATION_META, type Generation } from "@/lib/types";
 import { getRecentActorIds, rememberActorIds } from "@/lib/recent-actors";
 import { Footer } from "@/components/Footer";
+import { StatsModal } from "@/components/StatsModal";
+import { HowToPlayModal } from "@/components/HowToPlayModal";
+import { SettingsModal } from "@/components/SettingsModal";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -30,6 +33,7 @@ function HomePage() {
   const [dailyLoading, setDailyLoading] = useState(false);
   const [streakLoading, setStreakLoading] = useState(false);
   const streak = useStreak();
+  const [openModal, setOpenModal] = useState<null | "stats" | "how" | "settings">(null);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -113,10 +117,23 @@ function HomePage() {
   });
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-10">
+    <main className="min-h-screen flex flex-col items-center justify-start px-4 py-6 sm:py-10">
       <div className="w-full max-w-xl">
+        {/* Top icon bar (Wordle-style) */}
+        <div className="flex items-center justify-end gap-1 mb-4">
+          <IconBtn label="Statistics" onClick={() => setOpenModal("stats")}>
+            <BarChart3 className="h-5 w-5" />
+          </IconBtn>
+          <IconBtn label="How to Play" onClick={() => setOpenModal("how")}>
+            <HelpCircle className="h-5 w-5" />
+          </IconBtn>
+          <IconBtn label="Settings" onClick={() => setOpenModal("settings")}>
+            <Settings className="h-5 w-5" />
+          </IconBtn>
+        </div>
+
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 text-gold text-xs uppercase tracking-[0.3em] mb-3">
             <Sparkles className="h-3 w-3" />
             <span>A Hollywood Puzzle</span>
@@ -132,87 +149,6 @@ function HomePage() {
             <span className="text-gold">directing</span> credits.
           </p>
         </div>
-
-        {/* Daily Challenge */}
-        <button
-          onClick={handleDaily}
-          disabled={dailyLoading}
-          className="w-full mb-5 group relative overflow-hidden rounded-xl border border-gold/40 bg-gradient-to-br from-secondary to-card p-5 text-left shadow-gold transition hover:border-gold disabled:opacity-60"
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full gradient-gold text-primary-foreground">
-              {dailyLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <CalendarDays className="h-5 w-5" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-display text-lg text-gold-bright">Today's Daily</span>
-                <span className="text-[10px] uppercase tracking-widest text-gold/80 border border-gold/40 rounded px-1.5 py-0.5">
-                  New
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                One puzzle. Same pair worldwide. {todayLabel}.
-              </div>
-            </div>
-            <div className="text-gold-bright text-xl">→</div>
-          </div>
-        </button>
-
-        {/* Survival Streak */}
-        {streak.hydrated && streak.state.active && streak.state.currentGameId ? (
-          <button
-            onClick={handleContinueStreak}
-            className="w-full mb-5 group relative overflow-hidden rounded-xl border border-orange-500/50 bg-gradient-to-br from-orange-950/40 to-card p-5 text-left transition hover:border-orange-400"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
-                <Flame className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-lg text-orange-300">Continue Streak</span>
-                  <span className="text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
-                    🔥 {streak.state.count}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Pick up where you left off. One fail ends the run.
-                </div>
-              </div>
-              <div className="text-orange-300 text-xl">→</div>
-            </div>
-          </button>
-        ) : (
-          <button
-            onClick={handleStreak}
-            disabled={streakLoading}
-            className="w-full mb-5 group relative overflow-hidden rounded-xl border border-orange-500/40 bg-gradient-to-br from-orange-950/30 to-card p-5 text-left transition hover:border-orange-400/80 disabled:opacity-60"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
-                {streakLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Flame className="h-5 w-5" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-lg text-orange-300">Survival Streak</span>
-                  {streak.hydrated && streak.stats.best > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
-                      <Trophy className="h-2.5 w-2.5" /> Best {streak.stats.best}
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Solve back-to-back. One fail and the run ends. Uses your settings below.
-                </div>
-              </div>
-              <div className="text-orange-300 text-xl">→</div>
-            </div>
-          </button>
-        )}
 
         <div className="bg-card border border-border rounded-xl p-6 sm:p-8 shadow-2xl">
           {/* Username */}
@@ -253,13 +189,8 @@ function HomePage() {
 
           {/* Generation */}
           <div className="mt-6">
-            <div className="flex items-baseline justify-between mb-2">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                Your era
-              </span>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70">
-                Biases the actor pool
-              </span>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+              Your era
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {(Object.keys(GENERATION_META) as Generation[]).map((g) => {
@@ -290,13 +221,12 @@ function HomePage() {
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               <span className="text-gold">{GENERATION_META[generation].label}</span>
-              {" — "}
-              {GENERATION_META[generation].sub}. {GENERATION_META[generation].years}.
+              {GENERATION_META[generation].sub ? ` — ${GENERATION_META[generation].sub}.` : "."}{" "}
+              {GENERATION_META[generation].years}.
             </p>
           </div>
 
           {/* Difficulty */}
-
           <div className="mt-6">
             <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
               Difficulty
@@ -343,22 +273,123 @@ function HomePage() {
           )}
         </div>
 
-        {/* Rules */}
-        <details className="mt-6 bg-card/50 border border-border rounded-lg px-4 py-3">
-          <summary className="cursor-pointer text-sm text-gold-bright font-semibold">
-            How to play
-          </summary>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground list-disc pl-5">
-            <li>You'll see two actors. Connect them in six degrees or fewer.</li>
-            <li>Build the chain: <span className="text-foreground">Person → Movie → Person → Movie → …</span></li>
-            <li>Allowed connections: shared <span className="text-gold">acting</span> credit (including voice), or one person <span className="text-gold">directed</span> the movie.</li>
-            <li>Writing/producing credits don't count.</li>
-            <li>Stuck? Use a hint (-10 pts) or Give Up to reveal the shortest path.</li>
-          </ul>
-        </details>
+        {/* Special game modes — below the standard launch so they feel optional */}
+        <div className="mt-8">
+          <div className="text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            — or try a special mode —
+          </div>
+
+          {/* Daily Challenge */}
+          <button
+            onClick={handleDaily}
+            disabled={dailyLoading}
+            className="w-full mb-3 group relative overflow-hidden rounded-xl border border-gold/40 bg-gradient-to-br from-secondary to-card p-4 text-left shadow-gold transition hover:border-gold disabled:opacity-60"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full gradient-gold text-primary-foreground">
+                {dailyLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <CalendarDays className="h-5 w-5" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-lg text-gold-bright">Today's Daily</span>
+                  <span className="text-[10px] uppercase tracking-widest text-gold/80 border border-gold/40 rounded px-1.5 py-0.5">
+                    New
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  One puzzle. Same pair worldwide. {todayLabel}.
+                </div>
+              </div>
+              <div className="text-gold-bright text-xl">→</div>
+            </div>
+          </button>
+
+          {/* Survival Streak */}
+          {streak.hydrated && streak.state.active && streak.state.currentGameId ? (
+            <button
+              onClick={handleContinueStreak}
+              className="w-full group relative overflow-hidden rounded-xl border border-orange-500/50 bg-gradient-to-br from-orange-950/40 to-card p-4 text-left transition hover:border-orange-400"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
+                  <Flame className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-lg text-orange-300">Continue Streak</span>
+                    <span className="text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
+                      🔥 {streak.state.count}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Pick up where you left off. One fail ends the run.
+                  </div>
+                </div>
+                <div className="text-orange-300 text-xl">→</div>
+              </div>
+            </button>
+          ) : (
+            <button
+              onClick={handleStreak}
+              disabled={streakLoading}
+              className="w-full group relative overflow-hidden rounded-xl border border-orange-500/40 bg-gradient-to-br from-orange-950/30 to-card p-4 text-left transition hover:border-orange-400/80 disabled:opacity-60"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-orange-500/20 text-orange-300">
+                  {streakLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Flame className="h-5 w-5" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-lg text-orange-300">Survival Streak</span>
+                    {streak.hydrated && streak.stats.best > 0 && (
+                      <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
+                        <Trophy className="h-2.5 w-2.5" /> Best {streak.stats.best}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Solve back-to-back. One fail and the run ends. Uses your settings above.
+                  </div>
+                </div>
+                <div className="text-orange-300 text-xl">→</div>
+              </div>
+            </button>
+          )}
+        </div>
       </div>
+
+      {openModal === "stats" && <StatsModal onClose={() => setOpenModal(null)} />}
+      {openModal === "how" && <HowToPlayModal onClose={() => setOpenModal(null)} />}
+      {openModal === "settings" && <SettingsModal onClose={() => setOpenModal(null)} />}
+
       <Footer />
     </main>
+  );
+}
+
+function IconBtn({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="p-2 rounded-md text-muted-foreground hover:text-gold-bright hover:bg-secondary transition"
+    >
+      {children}
+    </button>
   );
 }
 
