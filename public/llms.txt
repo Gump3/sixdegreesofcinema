@@ -1,0 +1,13 @@
+# Six Degrees of Cinema
+
+> A daily Hollywood movie trivia puzzle: connect two movie stars in six degrees or fewer using acting and directing credits.
+
+Six Degrees of Cinema is a web-based game inspired by the classic "Six Degrees of Kevin Bacon" parlor game. Players are given two randomly selected actors and must build a chain that connects them through shared movie or directing credits, using six steps or fewer. The game offers a daily challenge (same pair worldwide), a survival streak mode, and configurable difficulty and era settings.
+
+## Pages
+
+- [Home](/): Start a new game, pick mode/era/difficulty, or launch the daily challenge or survival streak.
+
+## Optional
+
+- [Daily Challenge](/): The same actor pair every day, shared by every player worldwide.
