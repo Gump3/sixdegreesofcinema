@@ -31,6 +31,7 @@ import { DebugPanel } from "@/components/DebugPanel";
 import type { ChainStep } from "@/lib/types";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
+import { useStats } from "@/hooks/use-stats";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: GameScreen,
@@ -74,6 +75,7 @@ function GameScreen() {
   const [username] = useLocalStorage<string>("sdh:username", "Anonymous");
   const [history, setHistory] = useLocalStorage<ScoreEntry[]>("sdh:history", []);
   const streak = useStreak();
+  const stats = useStats();
   const isStreakGame = streak.hydrated && streak.state.active && streak.state.currentGameId === gameId;
   const [streakEnded, setStreakEnded] = useState<{ finalCount: number; best: number } | null>(null);
   const [advancingStreak, setAdvancingStreak] = useState(false);
@@ -200,6 +202,8 @@ function GameScreen() {
         if (isStreakGame) {
           streak.recordSolved(null);
         }
+        // Wordle-style local stats.
+        stats.recordResult(gameId, true, res.degrees ?? undefined);
 
 
         // Kick off alternates BFS separately so it doesn't block validation.
@@ -286,6 +290,9 @@ function GameScreen() {
         streak.end(finalCount);
         setStreakEnded({ finalCount, best: newBest });
       }
+      // Wordle-style local stats — giving up counts as played + not solved.
+      stats.recordResult(gameId, false);
+
 
     } catch (e) {
       setResult({ valid: false, reason: (e as Error).message });
