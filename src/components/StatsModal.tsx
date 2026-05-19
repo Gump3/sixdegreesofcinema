@@ -50,10 +50,12 @@ export function ModalShell({
   title,
   onClose,
   children,
+  maxWidthClass = "max-w-lg",
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  maxWidthClass?: string;
 }) {
   return (
     <div
@@ -61,7 +63,7 @@ export function ModalShell({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg bg-card border border-border rounded-xl shadow-2xl p-6 sm:p-8 animate-scale-in max-h-[90vh] overflow-y-auto"
+        className={`relative w-full ${maxWidthClass} bg-card border border-border rounded-xl shadow-2xl p-6 sm:p-8 animate-scale-in max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         <button

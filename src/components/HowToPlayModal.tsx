@@ -19,13 +19,13 @@ const CHAIN: Step[] = [
   {
     kind: "movie",
     name: "Flight",
-    img: "https://image.tmdb.org/t/p/w185/q7nmCgfbDsHb4VbsfDR1Mz6BqA9.jpg",
+    img: "https://image.tmdb.org/t/p/w185/tFsHDNclXoCKy2xMxskzXXMaFJS.jpg",
     connector: "is in",
   },
   {
     kind: "person",
     name: "Don Cheadle",
-    img: "https://image.tmdb.org/t/p/w185/r0bpyfBKbWoz7nIYDTcgkM2y8KP.jpg",
+    img: "https://image.tmdb.org/t/p/w185/umhTmcVF26qZKEpSfG1ZNpcbs9D.jpg",
     connector: "also stars",
   },
   {
@@ -37,7 +37,7 @@ const CHAIN: Step[] = [
   {
     kind: "person",
     name: "Matt Damon",
-    img: "https://image.tmdb.org/t/p/w185/3xJWVl8E7vEhEwSXfgs6mhxXBjE.jpg",
+    img: "https://image.tmdb.org/t/p/w185/At3JgvaNeEN4Z4ESKlhhes85Xo3.jpg",
     connector: "also stars",
   },
   {
@@ -88,7 +88,7 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <ModalShell title="How to Play" onClose={onClose}>
+    <ModalShell title="How to Play" onClose={onClose} maxWidthClass="max-w-[min(95vw,1100px)]">
       <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5 mb-5">
         <li>You'll see two actors. Connect them in six degrees or fewer.</li>
         <li>
@@ -114,15 +114,17 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="bg-secondary/40 border border-border rounded-lg p-4 overflow-x-auto">
-          <div className="flex items-stretch gap-2 min-w-max justify-center">
+        <div className="bg-secondary/40 border border-border rounded-lg p-3">
+          <div className="flex items-stretch gap-1 justify-center flex-nowrap">
             {visible.map(({ step, idx }, i) => (
-              <div key={idx} className="flex items-stretch gap-2 animate-fade-in">
+              <div key={idx} className="flex items-stretch gap-1 animate-fade-in">
                 {i > 0 && (
-                  <div className="flex flex-col items-center justify-center min-w-[70px]">
-                    <div className="text-[10px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
-                      {step.connector}
-                    </div>
+                  <div className="flex flex-col items-center justify-center min-w-[50px]">
+                    {innerVisibleCount > 0 && (
+                      <div className="text-[9px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
+                        {step.connector}
+                      </div>
+                    )}
                     <ArrowRight className="h-5 w-5 text-gold mt-1" />
                   </div>
                 )}
@@ -143,9 +145,9 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
 function ChainCard({ step }: { step: Step }) {
   const isPerson = step.kind === "person";
   return (
-    <div className="flex flex-col items-center w-[90px]">
+    <div className="flex flex-col items-center w-[80px]">
       <div
-        className={`w-[90px] h-[120px] rounded overflow-hidden border ${
+        className={`w-[80px] h-[108px] rounded overflow-hidden border ${
           isPerson ? "border-gold/60" : "border-border"
         } bg-background flex items-center justify-center`}
       >
