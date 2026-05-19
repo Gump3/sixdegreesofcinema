@@ -187,9 +187,9 @@ function HomePage() {
 
           {/* Mode */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-normal">
               Mode
-            </div>
+            </h2>
             <div className="grid grid-cols-2 gap-2">
               <ModeButton
                 label="Movie Noob"
