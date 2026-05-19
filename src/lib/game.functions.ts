@@ -150,6 +150,23 @@ export const createGame = createServerFn({ method: "POST" })
       actorB = unique[1];
     }
 
+    // 🎬 BACON ROUND: ~5% chance to swap one endpoint for Kevin Bacon.
+    // Skip if either picked actor *is* already Bacon (rare but possible).
+    let isBaconRound = false;
+    if (
+      actorA.id !== KEVIN_BACON_TMDB_ID &&
+      actorB.id !== KEVIN_BACON_TMDB_ID &&
+      Math.random() < BACON_ROUND_PROBABILITY
+    ) {
+      const bacon = await fetchKevinBacon();
+      if (bacon) {
+        // Replace a random side so start/end can both surprise.
+        if (Math.random() < 0.5) actorA = bacon;
+        else actorB = bacon;
+        isBaconRound = true;
+      }
+    }
+
     const aRec = asActor(actorA);
     const bRec = asActor(actorB);
 
@@ -160,13 +177,14 @@ export const createGame = createServerFn({ method: "POST" })
         actor_b: bRec as never,
         difficulty,
         mode,
+        is_bacon_round: isBaconRound,
       })
       .select("id")
       .single();
 
     if (error || !row) throw new Error(`Failed to create game: ${error?.message ?? "unknown"}`);
 
-    return { gameId: row.id, actorA: aRec, actorB: bRec, mode, difficulty };
+    return { gameId: row.id, actorA: aRec, actorB: bRec, mode, difficulty, isBaconRound };
   });
 
 // ============== getDailyChallenge ==============
