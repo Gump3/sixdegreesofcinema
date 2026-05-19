@@ -81,7 +81,7 @@ export const createGame = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { mode, difficulty, generation } = data;
+    const { mode, difficulty, generation, excludeIds } = data;
     const eraRange = GENERATION_RANGES[generation] ?? null;
 
     // Pull a popularity pool. Hard mode digs deeper for less obvious picks.
@@ -116,6 +116,14 @@ export const createGame = createServerFn({ method: "POST" })
     // Deduplicate by id
     const seen = new Set<number>();
     const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+
+    // Avoid recently-seen actors to give players more variety. Only apply the
+    // exclusion if the remaining pool stays healthy enough to still pick a pair.
+    const excludeSet = new Set(excludeIds ?? []);
+    const filteredForVariety = excludeSet.size
+      ? unique.filter((p) => !excludeSet.has(p.id))
+      : unique;
+    const candidates = filteredForVariety.length >= 8 ? filteredForVariety : unique;
 
     let actorA: Person | null = null;
     let actorB: Person | null = null;
