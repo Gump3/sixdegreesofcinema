@@ -33,6 +33,7 @@ function HomePage() {
   const [dailyLoading, setDailyLoading] = useState(false);
   const [streakLoading, setStreakLoading] = useState(false);
   const streak = useStreak();
+  const [openModal, setOpenModal] = useState<null | "stats" | "how" | "settings">(null);
 
   const [error, setError] = useState<string | null>(null);
 
