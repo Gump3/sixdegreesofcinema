@@ -243,10 +243,17 @@ function GameScreen() {
       const res = await hintFn({ data: { gameId, currentChain: chain } });
       if (res.hint) {
         setHintsUsed((h) => h + 1);
-        setChain((c) => [...c, res.hint as ChainStep]);
+        // If the user wandered off the shortest path, the server returns a
+        // truncateTo index so we can rewind their chain back to the anchor
+        // before appending the suggested step (keeps person/movie alternation).
+        const truncateTo = "truncateTo" in res && typeof res.truncateTo === "number" ? res.truncateTo : null;
+        setChain((c) => {
+          const base = truncateTo !== null ? c.slice(0, truncateTo) : c;
+          return [...base, res.hint as ChainStep];
+        });
         setValidationLog((l) => [...l, `Hint added: ${res.reason}`]);
       } else {
-        setValidationLog((l) => [...l, `No hint available.`]);
+        setValidationLog((l) => [...l, `No hint available: ${res.reason ?? ""}`]);
       }
     } catch (e) {
       setValidationLog((l) => [...l, `Hint error: ${(e as Error).message}`]);
