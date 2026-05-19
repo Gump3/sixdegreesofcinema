@@ -114,15 +114,17 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="bg-secondary/40 border border-border rounded-lg p-4 overflow-x-auto">
-          <div className="flex items-stretch gap-2 min-w-max justify-center">
+        <div className="bg-secondary/40 border border-border rounded-lg p-3">
+          <div className="flex items-stretch gap-1 justify-center flex-nowrap">
             {visible.map(({ step, idx }, i) => (
-              <div key={idx} className="flex items-stretch gap-2 animate-fade-in">
+              <div key={idx} className="flex items-stretch gap-1 animate-fade-in">
                 {i > 0 && (
-                  <div className="flex flex-col items-center justify-center min-w-[70px]">
-                    <div className="text-[10px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
-                      {step.connector}
-                    </div>
+                  <div className="flex flex-col items-center justify-center min-w-[50px]">
+                    {innerVisibleCount > 0 && (
+                      <div className="text-[9px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
+                        {step.connector}
+                      </div>
+                    )}
                     <ArrowRight className="h-5 w-5 text-gold mt-1" />
                   </div>
                 )}
