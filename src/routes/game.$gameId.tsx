@@ -114,6 +114,7 @@ function GameScreen() {
     setChain([]);
     setResult(null);
     setHintsUsed(0);
+    setInvalidAttempts(0);
     setDebugInfo(null);
     setValidationLog([]);
     setStreakEnded(null);
