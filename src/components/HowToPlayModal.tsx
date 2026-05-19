@@ -88,7 +88,7 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <ModalShell title="How to Play" onClose={onClose} maxWidthClass="max-w-4xl">
+    <ModalShell title="How to Play" onClose={onClose} maxWidthClass="max-w-[min(95vw,1100px)]">
       <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5 mb-5">
         <li>You'll see two actors. Connect them in six degrees or fewer.</li>
         <li>
