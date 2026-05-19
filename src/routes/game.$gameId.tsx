@@ -35,6 +35,25 @@ import { useStats } from "@/hooks/use-stats";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: GameScreen,
+  head: ({ params }) => ({
+    meta: [
+      { title: "Connection Challenge — Six Degrees of Cinema" },
+      {
+        name: "description",
+        content:
+          "Solve this Six Degrees of Cinema connection challenge: link two movie stars in six degrees or fewer.",
+      },
+      { property: "og:title", content: "Connection Challenge — Six Degrees of Cinema" },
+      {
+        property: "og:description",
+        content:
+          "Solve this Six Degrees of Cinema connection challenge: link two movie stars in six degrees or fewer.",
+      },
+      { property: "og:url", content: `/game/${params.gameId}` },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: `/game/${params.gameId}` }],
+  }),
 });
 
 type GameData = {
