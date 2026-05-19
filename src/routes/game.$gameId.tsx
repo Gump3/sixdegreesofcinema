@@ -429,6 +429,9 @@ function GameScreen() {
   return (
     <main className="min-h-screen px-4 py-6 pb-32">
       <div className="max-w-3xl mx-auto">
+        <h1 className="sr-only">
+          Connection Challenge: {game.actorA.name} to {game.actorB.name} — Six Degrees of Cinema
+        </h1>
         {/* Header */}
         <div className="flex items-center justify-between gap-2 mb-6">
           <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground text-sm">
