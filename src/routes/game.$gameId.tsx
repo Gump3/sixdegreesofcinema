@@ -35,6 +35,25 @@ import { useStats } from "@/hooks/use-stats";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: GameScreen,
+  head: ({ params }) => ({
+    meta: [
+      { title: "Connection Challenge — Six Degrees of Cinema" },
+      {
+        name: "description",
+        content:
+          "Solve this Six Degrees of Cinema connection challenge: link two movie stars in six degrees or fewer.",
+      },
+      { property: "og:title", content: "Connection Challenge — Six Degrees of Cinema" },
+      {
+        property: "og:description",
+        content:
+          "Solve this Six Degrees of Cinema connection challenge: link two movie stars in six degrees or fewer.",
+      },
+      { property: "og:url", content: `/game/${params.gameId}` },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: `/game/${params.gameId}` }],
+  }),
 });
 
 type GameData = {
@@ -410,6 +429,9 @@ function GameScreen() {
   return (
     <main className="min-h-screen px-4 py-6 pb-32">
       <div className="max-w-3xl mx-auto">
+        <h1 className="sr-only">
+          Connection Challenge: {game.actorA.name} to {game.actorB.name} — Six Degrees of Cinema
+        </h1>
         {/* Header */}
         <div className="flex items-center justify-between gap-2 mb-6">
           <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground text-sm">

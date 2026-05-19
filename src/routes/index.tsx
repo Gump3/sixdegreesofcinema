@@ -14,6 +14,25 @@ import { SettingsModal } from "@/components/SettingsModal";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
+  head: () => ({
+    meta: [
+      { title: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
+      {
+        name: "description",
+        content:
+          "Daily Hollywood puzzle: connect two movie stars in six degrees or fewer using acting and directing credits.",
+      },
+      { property: "og:title", content: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
+      {
+        property: "og:description",
+        content:
+          "Daily Hollywood puzzle: connect two movie stars in six degrees or fewer using acting and directing credits.",
+      },
+      { property: "og:url", content: "/" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+  }),
 });
 
 
@@ -140,9 +159,9 @@ function HomePage() {
             <Sparkles className="h-3 w-3" />
           </div>
           <h1 className="font-display text-5xl sm:text-6xl text-gold-bright leading-none">
-            Six Degrees
+            <span className="block">Six Degrees</span>
+            <span className="block font-display text-2xl text-foreground mt-1 italic">of Cinema</span>
           </h1>
-          <p className="font-display text-2xl text-foreground mt-1 italic">of Cinema</p>
           <p className="text-muted-foreground mt-4 max-w-md mx-auto text-sm">
             We'll give you two stars. Connect them in six degrees or fewer using only{" "}
             <span className="text-gold">acting</span> and{" "}
@@ -168,9 +187,9 @@ function HomePage() {
 
           {/* Mode */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-normal">
               Mode
-            </div>
+            </h2>
             <div className="grid grid-cols-2 gap-2">
               <ModeButton
                 label="Movie Noob"
@@ -189,9 +208,9 @@ function HomePage() {
 
           {/* Generation */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-normal">
               Your era
-            </div>
+            </h2>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {(Object.keys(GENERATION_META) as Generation[]).map((g) => {
                 const meta = GENERATION_META[g];
@@ -228,9 +247,9 @@ function HomePage() {
 
           {/* Difficulty */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-normal">
               Difficulty
-            </div>
+            </h2>
             <div className="grid grid-cols-3 gap-2">
               {(["easy", "medium", "hard"] as const).map((d) => (
                 <button
@@ -295,7 +314,7 @@ function HomePage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-lg text-gold-bright">Today's Daily</span>
+                  <h2 className="font-display text-lg text-gold-bright">Today's Daily</h2>
                   <span className="text-[10px] uppercase tracking-widest text-gold/80 border border-gold/40 rounded px-1.5 py-0.5">
                     New
                   </span>
@@ -344,7 +363,7 @@ function HomePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-display text-lg text-orange-300">Survival Streak</span>
+                    <h2 className="font-display text-lg text-orange-300">Survival Streak</h2>
                     {streak.hydrated && streak.stats.best > 0 && (
                       <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
                         <Trophy className="h-2.5 w-2.5" /> Best {streak.stats.best}
