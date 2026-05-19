@@ -553,10 +553,24 @@ function GameScreen() {
                 <div className="flex items-center gap-2 text-success">
                   <Trophy className="h-5 w-5" />
                   <h2 className="font-display text-2xl">You solved it!</h2>
+                  {result.isBaconRound && (
+                    <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest font-semibold text-amber-300 border border-amber-300/70 rounded px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/10">
+                      <Zap className="h-3 w-3" /> Bacon {result.solveMultiplier ?? 3}×
+                    </span>
+                  )}
                 </div>
                 <p className="text-muted-foreground text-sm mt-1">
                   {result.degrees} degree{result.degrees === 1 ? "" : "s"} ·{" "}
-                  <span className="text-gold-bright font-semibold">{result.score} pts</span>
+                  <span className={
+                    (result.score ?? 0) < 0
+                      ? "text-destructive font-semibold"
+                      : "text-gold-bright font-semibold"
+                  }>{result.score} pts</span>
+                  {result.isBaconRound && (result.invalidPenalty ?? 0) > 0 && (
+                    <span className="ml-1 text-amber-300/80">
+                      (Bacon penalty: −{result.invalidPenalty})
+                    </span>
+                  )}
                 </p>
               </>
             ) : result.gaveUp ? (
