@@ -76,6 +76,7 @@ export const createGame = createServerFn({ method: "POST" })
         mode: z.enum(["noob", "buff"]).default("noob"),
         difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
         generation: z.enum(["boomer", "genx", "millennial", "genz", "all"]).default("all"),
+        excludeIds: z.array(z.number().int()).max(50).optional(),
       })
       .parse(input),
   )
