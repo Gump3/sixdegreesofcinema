@@ -145,11 +145,11 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
 function ChainCard({ step }: { step: Step }) {
   const isPerson = step.kind === "person";
   return (
-    <div className="flex flex-col items-center w-[80px]">
+    <div className="flex flex-col items-center w-[48px] sm:w-[65px] md:w-[80px] shrink-0">
       <div
-        className={`w-[80px] h-[108px] rounded overflow-hidden border ${
+        className={`w-[48px] h-[64px] sm:w-[65px] sm:h-[88px] md:w-[80px] md:h-[108px] rounded overflow-hidden border ${
           isPerson ? "border-gold/60" : "border-border"
-        } bg-background flex items-center justify-center`}
+        } bg-background flex items-center justify-center shrink-0`}
       >
         {step.img ? (
           <img
@@ -162,11 +162,11 @@ function ChainCard({ step }: { step: Step }) {
             }}
           />
         ) : (
-          <User className="h-6 w-6 text-muted-foreground" />
+          <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
         )}
       </div>
       <div
-        className={`mt-1 text-[11px] font-semibold text-center leading-tight ${
+        className={`mt-1 text-[8px] sm:text-[10px] md:text-[11px] font-semibold text-center leading-tight ${
           isPerson ? "text-gold-bright" : "text-foreground"
         }`}
       >
