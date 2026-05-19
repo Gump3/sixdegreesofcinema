@@ -114,18 +114,18 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="bg-secondary/40 border border-border rounded-lg p-3">
-          <div className="flex items-stretch gap-1 justify-center flex-nowrap">
+        <div className="bg-secondary/40 border border-border rounded-lg p-2 sm:p-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex items-stretch gap-0.5 sm:gap-1 justify-start sm:justify-center">
             {visible.map(({ step, idx }, i) => (
-              <div key={idx} className="flex items-stretch gap-1 animate-fade-in">
+              <div key={idx} className="flex items-stretch gap-0.5 sm:gap-1 animate-fade-in shrink-0">
                 {i > 0 && (
-                  <div className="flex flex-col items-center justify-center min-w-[50px]">
+                  <div className="flex flex-col items-center justify-center shrink-0 px-0.5 sm:px-1">
                     {innerVisibleCount > 0 && (
-                      <div className="text-[9px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
+                      <div className="hidden sm:block text-[7px] sm:text-[9px] uppercase tracking-widest text-gold-bright whitespace-nowrap">
                         {step.connector}
                       </div>
                     )}
-                    <ArrowRight className="h-5 w-5 text-gold mt-1" />
+                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-gold mt-0.5 sm:mt-1" />
                   </div>
                 )}
                 <ChainCard step={step} />
@@ -145,11 +145,11 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
 function ChainCard({ step }: { step: Step }) {
   const isPerson = step.kind === "person";
   return (
-    <div className="flex flex-col items-center w-[80px]">
+    <div className="flex flex-col items-center w-[48px] sm:w-[65px] md:w-[80px] shrink-0">
       <div
-        className={`w-[80px] h-[108px] rounded overflow-hidden border ${
+        className={`w-[48px] h-[64px] sm:w-[65px] sm:h-[88px] md:w-[80px] md:h-[108px] rounded overflow-hidden border ${
           isPerson ? "border-gold/60" : "border-border"
-        } bg-background flex items-center justify-center`}
+        } bg-background flex items-center justify-center shrink-0`}
       >
         {step.img ? (
           <img
@@ -162,11 +162,11 @@ function ChainCard({ step }: { step: Step }) {
             }}
           />
         ) : (
-          <User className="h-6 w-6 text-muted-foreground" />
+          <User className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
         )}
       </div>
       <div
-        className={`mt-1 text-[11px] font-semibold text-center leading-tight ${
+        className={`mt-1 text-[8px] sm:text-[10px] md:text-[11px] font-semibold text-center leading-tight ${
           isPerson ? "text-gold-bright" : "text-foreground"
         }`}
       >
