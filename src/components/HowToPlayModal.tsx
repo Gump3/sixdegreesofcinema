@@ -19,13 +19,13 @@ const CHAIN: Step[] = [
   {
     kind: "movie",
     name: "Flight",
-    img: "https://image.tmdb.org/t/p/w185/q7nmCgfbDsHb4VbsfDR1Mz6BqA9.jpg",
+    img: "https://image.tmdb.org/t/p/w185/tFsHDNclXoCKy2xMxskzXXMaFJS.jpg",
     connector: "is in",
   },
   {
     kind: "person",
     name: "Don Cheadle",
-    img: "https://image.tmdb.org/t/p/w185/r0bpyfBKbWoz7nIYDTcgkM2y8KP.jpg",
+    img: "https://image.tmdb.org/t/p/w185/umhTmcVF26qZKEpSfG1ZNpcbs9D.jpg",
     connector: "also stars",
   },
   {
@@ -37,7 +37,7 @@ const CHAIN: Step[] = [
   {
     kind: "person",
     name: "Matt Damon",
-    img: "https://image.tmdb.org/t/p/w185/3xJWVl8E7vEhEwSXfgs6mhxXBjE.jpg",
+    img: "https://image.tmdb.org/t/p/w185/At3JgvaNeEN4Z4ESKlhhes85Xo3.jpg",
     connector: "also stars",
   },
   {
