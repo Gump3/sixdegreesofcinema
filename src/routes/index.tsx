@@ -1,13 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Film, Sparkles, Loader2, CalendarDays, Flame, Trophy } from "lucide-react";
+import { Film, Sparkles, Loader2, CalendarDays, Flame, Trophy, BarChart3, HelpCircle, Settings } from "lucide-react";
 import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
 import { GENERATION_META, type Generation } from "@/lib/types";
 import { getRecentActorIds, rememberActorIds } from "@/lib/recent-actors";
 import { Footer } from "@/components/Footer";
+import { StatsModal } from "@/components/StatsModal";
+import { HowToPlayModal } from "@/components/HowToPlayModal";
+import { SettingsModal } from "@/components/SettingsModal";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
