@@ -90,7 +90,8 @@ function HomePage() {
     setStreakLoading(true);
     try {
       const settings = { mode, difficulty, generation };
-      const res = await createGameFn({ data: settings });
+      const res = await createGameFn({ data: { ...settings, excludeIds: getRecentActorIds() } });
+      rememberActorIds([res.actorA?.id, res.actorB?.id]);
       streak.start(res.gameId, settings);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
