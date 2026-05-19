@@ -144,7 +144,7 @@ function HomePage() {
           </h1>
           <p className="font-display text-2xl text-foreground mt-1 italic">of Cinema</p>
           <p className="text-muted-foreground mt-4 max-w-md mx-auto text-sm">
-            Connect any two stars in six degrees or fewer. Use only{" "}
+            We'll give you two stars. Connect them in six degrees or fewer using only{" "}
             <span className="text-gold">acting</span> and{" "}
             <span className="text-gold">directing</span> credits.
           </p>
