@@ -23,6 +23,7 @@ export type Database = {
           daily_date: string | null
           difficulty: string
           id: string
+          is_bacon_round: boolean
           is_daily: boolean
           mode: string
           shortest_path: Json | null
@@ -35,6 +36,7 @@ export type Database = {
           daily_date?: string | null
           difficulty?: string
           id?: string
+          is_bacon_round?: boolean
           is_daily?: boolean
           mode?: string
           shortest_path?: Json | null
@@ -47,6 +49,7 @@ export type Database = {
           daily_date?: string | null
           difficulty?: string
           id?: string
+          is_bacon_round?: boolean
           is_daily?: boolean
           mode?: string
           shortest_path?: Json | null

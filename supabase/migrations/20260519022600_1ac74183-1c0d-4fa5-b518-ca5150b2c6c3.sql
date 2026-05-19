@@ -1,0 +1,1 @@
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS is_bacon_round boolean NOT NULL DEFAULT false;

@@ -15,6 +15,7 @@ import {
   Trophy,
   User,
   X,
+  Zap,
 } from "lucide-react";
 import {
   createGame,
@@ -43,6 +44,7 @@ type GameData = {
   difficulty: "easy" | "medium" | "hard";
   isDaily: boolean;
   dailyDate: string | null;
+  isBaconRound: boolean;
 };
 
 type ScoreEntry = {
@@ -81,6 +83,7 @@ function GameScreen() {
   const [chain, setChain] = useState<ChainStep[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [hintsUsed, setHintsUsed] = useState(0);
+  const [invalidAttempts, setInvalidAttempts] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [hintLoading, setHintLoading] = useState(false);
   const [givingUp, setGivingUp] = useState(false);
@@ -91,6 +94,9 @@ function GameScreen() {
         reason?: string;
         degrees?: number;
         score?: number;
+        isBaconRound?: boolean;
+        solveMultiplier?: number;
+        invalidPenalty?: number;
         shortestPath?: ChainStep[] | null;
         alternates?: ChainStep[][];
         gaveUp?: boolean;
@@ -108,6 +114,7 @@ function GameScreen() {
     setChain([]);
     setResult(null);
     setHintsUsed(0);
+    setInvalidAttempts(0);
     setDebugInfo(null);
     setValidationLog([]);
     setStreakEnded(null);
@@ -164,7 +171,9 @@ function GameScreen() {
     setSubmitting(true);
     setValidationLog((l) => [...l, `Submitting chain of ${chain.length} steps…`]);
     try {
-      const res = await validateFn({ data: { gameId, chain, hintsUsed } });
+      const res = await validateFn({
+        data: { gameId, chain, hintsUsed, invalidAttempts },
+      });
       setResult(res);
       if ("debug" in res && res.debug) setDebugInfo(res.debug);
       if (res.valid) {
@@ -215,6 +224,9 @@ function GameScreen() {
             .finally(() => setAlternatesLoading(false));
         }
       } else {
+        // Track each invalid submission so the penalty accumulates (Bacon rounds
+        // double the per-attempt cost on the server).
+        setInvalidAttempts((n) => n + 1);
         setValidationLog((l) => [...l, `Invalid: ${res.reason}`]);
       }
     } catch (e) {
@@ -387,6 +399,14 @@ function GameScreen() {
             Home
           </Link>
           <div className="flex items-center gap-2">
+            {game.isBaconRound && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest font-semibold text-amber-300 border border-amber-300/70 rounded px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/10 shadow-[0_0_12px_rgba(251,191,36,0.35)] animate-pulse"
+                title="Kevin Bacon round — 3x points if you solve, 2x penalty per wrong attempt."
+              >
+                <Zap className="h-3 w-3" /> Bacon Round · 3×
+              </span>
+            )}
             {isStreakGame && (
               <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest text-orange-300 border border-orange-400/50 rounded px-2 py-0.5 bg-orange-500/10">
                 <Flame className="h-3 w-3" /> Streak {streak.state.count}
@@ -426,15 +446,22 @@ function GameScreen() {
         </div>
 
         {/* Degrees meter */}
-        <div className="mb-4 flex items-center justify-between text-sm">
+        <div className="mb-4 flex items-center justify-between text-sm flex-wrap gap-2">
           <div className="text-muted-foreground">
             Degrees used: <span className={overLimit ? "text-destructive" : "text-gold-bright font-semibold"}>{degreesUsed}/6</span>
           </div>
-          {hintsUsed > 0 && (
-            <div className="text-xs text-muted-foreground">
-              Hints used: {hintsUsed} (-{hintsUsed * (game.mode === "buff" ? 20 : 10)} pts)
-            </div>
-          )}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {hintsUsed > 0 && (
+              <span>
+                Hints: {hintsUsed} (-{hintsUsed * (game.mode === "buff" ? 20 : 10)} pts)
+              </span>
+            )}
+            {invalidAttempts > 0 && (
+              <span className={game.isBaconRound ? "text-amber-300" : "text-destructive"}>
+                Wrong tries: {invalidAttempts} (-{invalidAttempts * (game.isBaconRound ? 50 : 25)} pts)
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Chain */}
@@ -526,10 +553,24 @@ function GameScreen() {
                 <div className="flex items-center gap-2 text-success">
                   <Trophy className="h-5 w-5" />
                   <h2 className="font-display text-2xl">You solved it!</h2>
+                  {result.isBaconRound && (
+                    <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest font-semibold text-amber-300 border border-amber-300/70 rounded px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/10">
+                      <Zap className="h-3 w-3" /> Bacon {result.solveMultiplier ?? 3}×
+                    </span>
+                  )}
                 </div>
                 <p className="text-muted-foreground text-sm mt-1">
                   {result.degrees} degree{result.degrees === 1 ? "" : "s"} ·{" "}
-                  <span className="text-gold-bright font-semibold">{result.score} pts</span>
+                  <span className={
+                    (result.score ?? 0) < 0
+                      ? "text-destructive font-semibold"
+                      : "text-gold-bright font-semibold"
+                  }>{result.score} pts</span>
+                  {result.isBaconRound && (result.invalidPenalty ?? 0) > 0 && (
+                    <span className="ml-1 text-amber-300/80">
+                      (Bacon penalty: −{result.invalidPenalty})
+                    </span>
+                  )}
                 </p>
               </>
             ) : result.gaveUp ? (
