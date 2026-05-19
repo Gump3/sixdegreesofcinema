@@ -76,11 +76,12 @@ export const createGame = createServerFn({ method: "POST" })
         mode: z.enum(["noob", "buff"]).default("noob"),
         difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
         generation: z.enum(["boomer", "genx", "millennial", "genz", "all"]).default("all"),
+        excludeIds: z.array(z.number().int()).max(50).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { mode, difficulty, generation } = data;
+    const { mode, difficulty, generation, excludeIds } = data;
     const eraRange = GENERATION_RANGES[generation] ?? null;
 
     // Pull a popularity pool. Hard mode digs deeper for less obvious picks.
@@ -116,12 +117,20 @@ export const createGame = createServerFn({ method: "POST" })
     const seen = new Set<number>();
     const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
 
+    // Avoid recently-seen actors to give players more variety. Only apply the
+    // exclusion if the remaining pool stays healthy enough to still pick a pair.
+    const excludeSet = new Set(excludeIds ?? []);
+    const filteredForVariety = excludeSet.size
+      ? unique.filter((p) => !excludeSet.has(p.id))
+      : unique;
+    const candidates = filteredForVariety.length >= 8 ? filteredForVariety : unique;
+
     let actorA: Person | null = null;
     let actorB: Person | null = null;
 
     for (let attempt = 0; attempt < 20; attempt++) {
-      const a = unique[Math.floor(Math.random() * unique.length)];
-      const b = unique[Math.floor(Math.random() * unique.length)];
+      const a = candidates[Math.floor(Math.random() * candidates.length)];
+      const b = candidates[Math.floor(Math.random() * candidates.length)];
       if (!a || !b || a.id === b.id) continue;
 
       // For Hard, avoid trivial direct-costar pairs (same movie).
@@ -146,8 +155,8 @@ export const createGame = createServerFn({ method: "POST" })
 
     if (!actorA || !actorB) {
       // Fallback: pick first two distinct
-      actorA = unique[0];
-      actorB = unique[1];
+      actorA = candidates[0];
+      actorB = candidates[1];
     }
 
     // 🎬 BACON ROUND: ~5% chance to swap one endpoint for Kevin Bacon.

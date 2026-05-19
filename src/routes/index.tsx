@@ -6,6 +6,7 @@ import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
 import { GENERATION_META, type Generation } from "@/lib/types";
+import { getRecentActorIds, rememberActorIds } from "@/lib/recent-actors";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -47,7 +48,8 @@ function HomePage() {
     setUsername(finalName);
     setLoading(true);
     try {
-      const res = await createGameFn({ data: { mode, difficulty, generation } });
+      const res = await createGameFn({ data: { mode, difficulty, generation, excludeIds: getRecentActorIds() } });
+      rememberActorIds([res.actorA?.id, res.actorB?.id]);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start a game.");
@@ -88,7 +90,8 @@ function HomePage() {
     setStreakLoading(true);
     try {
       const settings = { mode, difficulty, generation };
-      const res = await createGameFn({ data: settings });
+      const res = await createGameFn({ data: { ...settings, excludeIds: getRecentActorIds() } });
+      rememberActorIds([res.actorA?.id, res.actorB?.id]);
       streak.start(res.gameId, settings);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
