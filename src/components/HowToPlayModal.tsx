@@ -145,9 +145,9 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
 function ChainCard({ step }: { step: Step }) {
   const isPerson = step.kind === "person";
   return (
-    <div className="flex flex-col items-center w-[90px]">
+    <div className="flex flex-col items-center w-[80px]">
       <div
-        className={`w-[90px] h-[120px] rounded overflow-hidden border ${
+        className={`w-[80px] h-[108px] rounded overflow-hidden border ${
           isPerson ? "border-gold/60" : "border-border"
         } bg-background flex items-center justify-center`}
       >
