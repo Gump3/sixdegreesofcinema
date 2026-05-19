@@ -314,7 +314,7 @@ function HomePage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-lg text-gold-bright">Today's Daily</span>
+                  <h2 className="font-display text-lg text-gold-bright">Today's Daily</h2>
                   <span className="text-[10px] uppercase tracking-widest text-gold/80 border border-gold/40 rounded px-1.5 py-0.5">
                     New
                   </span>
