@@ -247,9 +247,9 @@ function HomePage() {
 
           {/* Difficulty */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-normal">
               Difficulty
-            </div>
+            </h2>
             <div className="grid grid-cols-3 gap-2">
               {(["easy", "medium", "hard"] as const).map((d) => (
                 <button
