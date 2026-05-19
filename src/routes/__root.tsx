@@ -67,25 +67,49 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Six Degrees of Cinema" },
+      { title: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
       {
         name: "description",
         content:
-          "Connect any two movie stars in six degrees or fewer using acting and directing credits. A Hollywood puzzle.",
+          "Connect two movie stars in six degrees or fewer using acting and directing credits. A daily Hollywood puzzle.",
       },
-      { property: "og:title", content: "Six Degrees of Cinema" },
+      { property: "og:title", content: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
       {
         property: "og:description",
-        content: "Connect any two movie stars in six degrees or fewer.",
+        content:
+          "Connect two movie stars in six degrees or fewer using acting and directing credits. A daily Hollywood puzzle.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Six Degrees of Cinema" },
-      { name: "description", content: "This application enables cloud deployment and provides a movie trivia game with a global leaderboard." },
-      { property: "og:description", content: "This application enables cloud deployment and provides a movie trivia game with a global leaderboard." },
-      { name: "twitter:description", content: "This application enables cloud deployment and provides a movie trivia game with a global leaderboard." },
+      { property: "og:site_name", content: "Six Degrees of Cinema" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
+      {
+        name: "twitter:description",
+        content:
+          "Connect two movie stars in six degrees or fewer using acting and directing credits.",
+      },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              name: "Six Degrees of Cinema",
+              url: "https://sixdegreesofcinema.lovable.app",
+            },
+            {
+              "@type": "Organization",
+              name: "Six Degrees of Cinema",
+              url: "https://sixdegreesofcinema.lovable.app",
+            },
+          ],
+        }),
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
