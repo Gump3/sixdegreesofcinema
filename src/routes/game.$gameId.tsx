@@ -446,15 +446,22 @@ function GameScreen() {
         </div>
 
         {/* Degrees meter */}
-        <div className="mb-4 flex items-center justify-between text-sm">
+        <div className="mb-4 flex items-center justify-between text-sm flex-wrap gap-2">
           <div className="text-muted-foreground">
             Degrees used: <span className={overLimit ? "text-destructive" : "text-gold-bright font-semibold"}>{degreesUsed}/6</span>
           </div>
-          {hintsUsed > 0 && (
-            <div className="text-xs text-muted-foreground">
-              Hints used: {hintsUsed} (-{hintsUsed * (game.mode === "buff" ? 20 : 10)} pts)
-            </div>
-          )}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {hintsUsed > 0 && (
+              <span>
+                Hints: {hintsUsed} (-{hintsUsed * (game.mode === "buff" ? 20 : 10)} pts)
+              </span>
+            )}
+            {invalidAttempts > 0 && (
+              <span className={game.isBaconRound ? "text-amber-300" : "text-destructive"}>
+                Wrong tries: {invalidAttempts} (-{invalidAttempts * (game.isBaconRound ? 50 : 25)} pts)
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Chain */}
