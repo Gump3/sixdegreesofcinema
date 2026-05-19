@@ -113,7 +113,7 @@ function HomePage() {
   });
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-10">
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="text-center mb-10">
