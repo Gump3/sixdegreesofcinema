@@ -48,7 +48,8 @@ function HomePage() {
     setUsername(finalName);
     setLoading(true);
     try {
-      const res = await createGameFn({ data: { mode, difficulty, generation } });
+      const res = await createGameFn({ data: { mode, difficulty, generation, excludeIds: getRecentActorIds() } });
+      rememberActorIds([res.actorA?.id, res.actorB?.id]);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start a game.");
