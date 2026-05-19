@@ -322,7 +322,9 @@ function GameScreen() {
     if (!streak.state.settings || advancingStreak) return;
     setAdvancingStreak(true);
     try {
-      const res = await createGameFn({ data: streak.state.settings });
+      const { getRecentActorIds, rememberActorIds } = await import("@/lib/recent-actors");
+      const res = await createGameFn({ data: { ...streak.state.settings, excludeIds: getRecentActorIds() } });
+      rememberActorIds([res.actorA?.id, res.actorB?.id]);
       streak.advance(res.gameId);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
