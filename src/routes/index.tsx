@@ -6,6 +6,7 @@ import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
 import { GENERATION_META, type Generation } from "@/lib/types";
+import { getRecentActorIds, rememberActorIds } from "@/lib/recent-actors";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
