@@ -83,6 +83,7 @@ function GameScreen() {
   const [chain, setChain] = useState<ChainStep[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [hintsUsed, setHintsUsed] = useState(0);
+  const [invalidAttempts, setInvalidAttempts] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [hintLoading, setHintLoading] = useState(false);
   const [givingUp, setGivingUp] = useState(false);
@@ -93,6 +94,9 @@ function GameScreen() {
         reason?: string;
         degrees?: number;
         score?: number;
+        isBaconRound?: boolean;
+        solveMultiplier?: number;
+        invalidPenalty?: number;
         shortestPath?: ChainStep[] | null;
         alternates?: ChainStep[][];
         gaveUp?: boolean;
