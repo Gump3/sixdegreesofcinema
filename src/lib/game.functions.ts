@@ -379,25 +379,27 @@ export const validateChain = createServerFn({ method: "POST" })
         gameId: z.string().uuid(),
         chain: z.array(chainStepSchema).min(1).max(15),
         hintsUsed: z.number().int().min(0).max(20).default(0),
+        invalidAttempts: z.number().int().min(0).max(100).default(0),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const game = await supabaseAdmin
       .from("games")
-      .select("actor_a, actor_b, difficulty, mode, shortest_path, alternates")
+      .select("actor_a, actor_b, difficulty, mode, shortest_path, alternates, is_bacon_round")
       .eq("id", data.gameId)
       .single();
     if (game.error || !game.data) throw new Error("Game not found");
 
     const actorA = game.data.actor_a as unknown as ActorRecord;
     const actorB = game.data.actor_b as unknown as ActorRecord;
+    const isBaconRound = Boolean(game.data.is_bacon_round);
 
     const chain = data.chain;
 
     // Must start with Actor A and end with Actor B
     if (chain[0]?.kind !== "person" || chain[0].id !== actorA.id) {
-      return { valid: false, reason: `Chain must start with ${actorA.name}.`, invalidStepIndex: 0 };
+      return { valid: false, reason: `Chain must start with ${actorA.name}.`, invalidStepIndex: 0, isBaconRound };
     }
     const last = chain[chain.length - 1];
     if (last.kind !== "person" || last.id !== actorB.id) {
@@ -405,6 +407,7 @@ export const validateChain = createServerFn({ method: "POST" })
         valid: false,
         reason: `Chain must end with ${actorB.name}.`,
         invalidStepIndex: chain.length - 1,
+        isBaconRound,
       };
     }
 
@@ -416,6 +419,7 @@ export const validateChain = createServerFn({ method: "POST" })
           valid: false,
           reason: `Step ${i + 1} must be a ${expected}.`,
           invalidStepIndex: i,
+          isBaconRound,
         };
       }
     }
@@ -437,6 +441,7 @@ export const validateChain = createServerFn({ method: "POST" })
             (movieStep as { kind: "movie"; title: string }).title
           }.`,
           invalidStepIndex: i,
+          isBaconRound,
         };
       }
     }
@@ -444,10 +449,10 @@ export const validateChain = createServerFn({ method: "POST" })
     // Degrees used = number of movies in the chain (i.e., edges between persons)
     const degrees = chain.filter((s) => s.kind === "movie").length;
     if (degrees > 6) {
-      return { valid: false, reason: "Too many degrees (max 6).", invalidStepIndex: -1 };
+      return { valid: false, reason: "Too many degrees (max 6).", invalidStepIndex: -1, isBaconRound };
     }
 
-    // Score
+    // ====== Score ======
     const isHardMode = game.data.mode === "buff";
     const base = isHardMode ? 200 : 100;
     const degreeBonus =
@@ -456,11 +461,20 @@ export const validateChain = createServerFn({ method: "POST" })
       degrees === 4 ? (isHardMode ? 20 : 10) :
       degrees === 5 ? (isHardMode ? 10 : 5) : 0;
     const hintPenalty = data.hintsUsed * (isHardMode ? 20 : 10);
-    const score = Math.max(0, base + degreeBonus - hintPenalty);
 
-    // Return cached shortest path if already computed; otherwise client can fetch
-    // it separately via getAlternatesFn so we don't block this response with a
-    // potentially-minutes-long BFS (which causes upstream request timeouts).
+    // 🎬 Bacon round multipliers:
+    //   - Solve reward: 3x (applied to base + degreeBonus, before hint penalty)
+    //   - Invalid-attempt penalty: 2x (and Bacon games penalize more per attempt)
+    const solveMultiplier = isBaconRound ? 3 : 1;
+    const perInvalidPenalty = isBaconRound ? 50 : 25;
+    const invalidPenalty = data.invalidAttempts * perInvalidPenalty;
+    const solveScore = (base + degreeBonus) * solveMultiplier - hintPenalty;
+
+    // Allow negative for Bacon rounds (high risk / high reward). Normal games
+    // still floor at 0 so casual players never see negatives.
+    const rawScore = solveScore - invalidPenalty;
+    const score = isBaconRound ? rawScore : Math.max(0, rawScore);
+
     const shortest = game.data.shortest_path as unknown as ChainStep[] | null;
     const alternates = game.data.alternates as unknown as ChainStep[][] | null;
 
@@ -468,6 +482,10 @@ export const validateChain = createServerFn({ method: "POST" })
       valid: true,
       degrees,
       score,
+      isBaconRound,
+      solveMultiplier,
+      invalidPenalty,
+      hintPenalty,
       shortestPath: shortest,
       alternates: alternates ?? [],
       alternatesPending: !shortest,
