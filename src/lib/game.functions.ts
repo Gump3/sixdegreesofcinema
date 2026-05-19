@@ -565,7 +565,7 @@ export const getHint = createServerFn({ method: "POST" })
       }
     }
 
-    if (!shortest) return { hint: null, reason: "No path found within 6 degrees." };
+    if (!shortest) return { hint: null, reason: "No path found within 6 degrees.", truncateTo: null };
 
     // Walk the user's chain from the end backwards: the deepest step that's
     // also on the canonical shortest path becomes our anchor, and we suggest
@@ -581,11 +581,15 @@ export const getHint = createServerFn({ method: "POST" })
         const wandered = i < cur.length - 1;
         return {
           hint: shortest[idx + 1],
+          // Client should truncate the chain to length (i + 1) before appending
+          // the hint — this keeps person/movie alternation intact when the user
+          // had wandered off the shortest path.
+          truncateTo: i + 1,
           reason: wandered
-            ? `You've drifted off the shortest path — try this next from ${
+            ? `You've drifted — rewinding to ${
                 (step as { name?: string; title?: string }).name ??
                 (step as { title?: string }).title
-              }.`
+              } and suggesting the next step.`
             : "Try this next step.",
         };
       }
@@ -594,9 +598,9 @@ export const getHint = createServerFn({ method: "POST" })
     // Fallback: chain shares nothing with the path (shouldn't happen since
     // chain[0] is always Actor A = shortest[0]) — suggest the first move.
     if (shortest.length >= 2) {
-      return { hint: shortest[1], reason: "Start with this move." };
+      return { hint: shortest[1], truncateTo: 1, reason: "Start with this move." };
     }
-    return { hint: null, reason: "No further hint available." };
+    return { hint: null, reason: "No further hint available.", truncateTo: null };
   });
 
 // ============== giveUp ==============
