@@ -171,7 +171,9 @@ function GameScreen() {
     setSubmitting(true);
     setValidationLog((l) => [...l, `Submitting chain of ${chain.length} steps…`]);
     try {
-      const res = await validateFn({ data: { gameId, chain, hintsUsed } });
+      const res = await validateFn({
+        data: { gameId, chain, hintsUsed, invalidAttempts },
+      });
       setResult(res);
       if ("debug" in res && res.debug) setDebugInfo(res.debug);
       if (res.valid) {
@@ -222,6 +224,9 @@ function GameScreen() {
             .finally(() => setAlternatesLoading(false));
         }
       } else {
+        // Track each invalid submission so the penalty accumulates (Bacon rounds
+        // double the per-attempt cost on the server).
+        setInvalidAttempts((n) => n + 1);
         setValidationLog((l) => [...l, `Invalid: ${res.reason}`]);
       }
     } catch (e) {
