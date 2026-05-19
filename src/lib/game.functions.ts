@@ -47,6 +47,28 @@ const GENERATION_RANGES: Record<string, [number, number] | null> = {
   all: null,
 };
 
+// Kevin Bacon — TMDB person id. Used for "Bacon Round" surprise pairs.
+const KEVIN_BACON_TMDB_ID = 4724;
+const BACON_ROUND_PROBABILITY = 0.05; // ~5% of new (non-daily) games
+
+async function fetchKevinBacon(): Promise<Person | null> {
+  try {
+    const results = await searchPeople("Kevin Bacon");
+    const exact = results.find((p) => p.id === KEVIN_BACON_TMDB_ID);
+    if (exact) return exact;
+    // Fallback: synthesize a minimal Person record (image will be null).
+    return {
+      id: KEVIN_BACON_TMDB_ID,
+      name: "Kevin Bacon",
+      profile_path: null,
+      known_for_department: "Acting",
+      popularity: 50,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const createGame = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
