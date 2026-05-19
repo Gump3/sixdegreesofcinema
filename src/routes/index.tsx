@@ -7,6 +7,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
 import { GENERATION_META, type Generation } from "@/lib/types";
 import { getRecentActorIds, rememberActorIds } from "@/lib/recent-actors";
+import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -356,6 +357,7 @@ function HomePage() {
           </ul>
         </details>
       </div>
+      <Footer />
     </main>
   );
 }
