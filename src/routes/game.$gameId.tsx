@@ -15,6 +15,7 @@ import {
   Trophy,
   User,
   X,
+  Zap,
 } from "lucide-react";
 import {
   createGame,
