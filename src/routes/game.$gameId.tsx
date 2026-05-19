@@ -399,6 +399,14 @@ function GameScreen() {
             Home
           </Link>
           <div className="flex items-center gap-2">
+            {game.isBaconRound && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest font-semibold text-amber-300 border border-amber-300/70 rounded px-2 py-0.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/10 shadow-[0_0_12px_rgba(251,191,36,0.35)] animate-pulse"
+                title="Kevin Bacon round — 3x points if you solve, 2x penalty per wrong attempt."
+              >
+                <Zap className="h-3 w-3" /> Bacon Round · 3×
+              </span>
+            )}
             {isStreakGame && (
               <span className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest text-orange-300 border border-orange-400/50 rounded px-2 py-0.5 bg-orange-500/10">
                 <Flame className="h-3 w-3" /> Streak {streak.state.count}
