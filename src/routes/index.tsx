@@ -159,9 +159,9 @@ function HomePage() {
             <Sparkles className="h-3 w-3" />
           </div>
           <h1 className="font-display text-5xl sm:text-6xl text-gold-bright leading-none">
-            Six Degrees
+            <span className="block">Six Degrees</span>
+            <span className="block font-display text-2xl text-foreground mt-1 italic">of Cinema</span>
           </h1>
-          <p className="font-display text-2xl text-foreground mt-1 italic">of Cinema</p>
           <p className="text-muted-foreground mt-4 max-w-md mx-auto text-sm">
             We'll give you two stars. Connect them in six degrees or fewer using only{" "}
             <span className="text-gold">acting</span> and{" "}
