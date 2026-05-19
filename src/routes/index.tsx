@@ -363,7 +363,7 @@ function HomePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-display text-lg text-orange-300">Survival Streak</span>
+                    <h2 className="font-display text-lg text-orange-300">Survival Streak</h2>
                     {streak.hydrated && streak.stats.best > 0 && (
                       <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-300/80 border border-orange-400/40 rounded px-1.5 py-0.5">
                         <Trophy className="h-2.5 w-2.5" /> Best {streak.stats.best}
