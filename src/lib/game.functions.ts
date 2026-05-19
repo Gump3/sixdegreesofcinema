@@ -129,8 +129,8 @@ export const createGame = createServerFn({ method: "POST" })
     let actorB: Person | null = null;
 
     for (let attempt = 0; attempt < 20; attempt++) {
-      const a = unique[Math.floor(Math.random() * unique.length)];
-      const b = unique[Math.floor(Math.random() * unique.length)];
+      const a = candidates[Math.floor(Math.random() * candidates.length)];
+      const b = candidates[Math.floor(Math.random() * candidates.length)];
       if (!a || !b || a.id === b.id) continue;
 
       // For Hard, avoid trivial direct-costar pairs (same movie).
@@ -155,8 +155,8 @@ export const createGame = createServerFn({ method: "POST" })
 
     if (!actorA || !actorB) {
       // Fallback: pick first two distinct
-      actorA = unique[0];
-      actorB = unique[1];
+      actorA = candidates[0];
+      actorB = candidates[1];
     }
 
     // 🎬 BACON ROUND: ~5% chance to swap one endpoint for Kevin Bacon.
