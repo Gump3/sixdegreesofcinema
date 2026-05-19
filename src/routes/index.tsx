@@ -208,9 +208,9 @@ function HomePage() {
 
           {/* Generation */}
           <div className="mt-6">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 font-normal">
               Your era
-            </div>
+            </h2>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {(Object.keys(GENERATION_META) as Generation[]).map((g) => {
                 const meta = GENERATION_META[g];
