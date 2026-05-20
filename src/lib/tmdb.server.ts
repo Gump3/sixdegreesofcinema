@@ -184,28 +184,32 @@ export async function getPersonCredits(personId: number): Promise<{
   directing: Movie[];
 }> {
   const data = await tmdb<{
-    cast?: Array<Movie & { release_date?: string }>;
-    crew?: Array<Movie & { job?: string; department?: string; release_date?: string }>;
+    cast?: Array<Movie & { release_date?: string; vote_count?: number }>;
+    crew?: Array<Movie & { job?: string; department?: string; release_date?: string; vote_count?: number }>;
   }>(`/person/${personId}/movie_credits`, {}, "credits");
 
   const acting = (data.cast ?? [])
     .filter((m) => isEligibleMovieBasic(m))
+    .filter((m) => isNotableMovie(m))
     .map((m) => ({
       id: m.id,
       title: m.title,
       poster_path: m.poster_path ?? null,
       release_date: m.release_date,
       popularity: m.popularity,
+      vote_count: m.vote_count,
     }));
 
   const directing = (data.crew ?? [])
     .filter((m) => (m.job ?? "").toLowerCase() === "director" && isEligibleMovieBasic(m))
+    .filter((m) => isNotableMovie(m))
     .map((m) => ({
       id: m.id,
       title: m.title,
       poster_path: m.poster_path ?? null,
       release_date: m.release_date,
       popularity: m.popularity,
+      vote_count: m.vote_count,
     }));
 
   // Deduplicate by id (some people both acted and directed)
