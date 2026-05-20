@@ -14,14 +14,14 @@ export function Footer() {
         .
       </p>
       <p className="mt-1">
-        © {new Date().getFullYear()} Six Degrees of Cinema. Code licensed under{" "}
+        © {new Date().getFullYear()} Six Degrees of Cinema. Created by{" "}
         <a
-          href="https://opensource.org/licenses/MIT"
+          href="https://www.linkedin.com/in/gautamsavant/"
           target="_blank"
           rel="noopener noreferrer"
           className="text-gold hover:underline"
         >
-          MIT
+          Gautam Savant
         </a>
         .
       </p>
