@@ -333,6 +333,7 @@ export async function getPopularPeoplePage(
   return (data.results ?? [])
     .filter((p) => p.known_for_department === "Acting" || p.known_for_department === "Directing")
     .filter((p) => isHollywoodKnownFor(p.known_for))
+    .filter((p) => isNotablePerson(p))
     .filter((p) => (era ? (p.known_for ?? []).some((k) => k.media_type === "movie" && k.original_language === "en" && inEra(k)) : true));
 }
 
