@@ -135,6 +135,8 @@ export type Movie = {
   release_date?: string;
   popularity?: number;
   vote_count?: number;
+  video?: boolean;
+  genre_ids?: number[];
 };
 
 // ===== Notability thresholds =====
@@ -147,13 +149,18 @@ export type Movie = {
 //     and only apply a tiny popularity floor as a sanity check.
 //   - vote_count >= 200 reliably filters out indie/obscure titles.
 //   - popularity >= 4 for people removes background actors / non-notable crew.
+//   - `video: true` flags music videos / promo shorts / direct-to-video — exclude.
+//   - Documentary-only credits (genre 99) tend to be obscure festival shorts; keep
+//     them only if they clear a higher vote bar (handled via vote_count gate above).
 const MIN_MOVIE_VOTE_COUNT = 200;
 const MIN_MOVIE_POPULARITY = 1; // sanity floor only; vote_count does the work
 const MIN_PERSON_POPULARITY = 4;
 
-export function isNotableMovie(m: { vote_count?: number; popularity?: number }): boolean {
+export function isNotableMovie(m: { vote_count?: number; popularity?: number; video?: boolean }): boolean {
+  if (m.video === true) return false; // TMDB flag for non-theatrical video/short releases
   return (m.vote_count ?? 0) >= MIN_MOVIE_VOTE_COUNT && (m.popularity ?? 0) >= MIN_MOVIE_POPULARITY;
 }
+
 
 
 export function isNotablePerson(p: { popularity?: number }): boolean {
