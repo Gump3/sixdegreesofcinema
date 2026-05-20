@@ -139,18 +139,22 @@ export type Movie = {
 
 // ===== Notability thresholds =====
 // Goal: keep "who is this?" actors and movies out of the picker, hints, and BFS,
-// without making the path solver unable to find a route. Tuned from TMDB norms:
-//   - vote_count >= 200 filters out indie/obscure movies; mainstream Hollywood
-//     films almost always clear this easily.
-//   - popularity >= 5 for movies removes long-tail festival/limited releases.
+// without making the path solver unable to find a route.
+// Notes from tuning:
+//   - TMDB `popularity` is a recency-weighted trending score. Older mainstream
+//     films (e.g. Haywire 2011 = pop 3.3 with 1,476 votes) score low even
+//     though they're widely known. So we use vote_count as the primary gate
+//     and only apply a tiny popularity floor as a sanity check.
+//   - vote_count >= 200 reliably filters out indie/obscure titles.
 //   - popularity >= 4 for people removes background actors / non-notable crew.
 const MIN_MOVIE_VOTE_COUNT = 200;
-const MIN_MOVIE_POPULARITY = 5;
+const MIN_MOVIE_POPULARITY = 1; // sanity floor only; vote_count does the work
 const MIN_PERSON_POPULARITY = 4;
 
 export function isNotableMovie(m: { vote_count?: number; popularity?: number }): boolean {
   return (m.vote_count ?? 0) >= MIN_MOVIE_VOTE_COUNT && (m.popularity ?? 0) >= MIN_MOVIE_POPULARITY;
 }
+
 
 export function isNotablePerson(p: { popularity?: number }): boolean {
   return (p.popularity ?? 0) >= MIN_PERSON_POPULARITY;
