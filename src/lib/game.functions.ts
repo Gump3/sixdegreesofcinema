@@ -155,8 +155,14 @@ export const createGame = createServerFn({ method: "POST" })
 
     if (!actorA || !actorB) {
       // Fallback: pick first two distinct
-      actorA = candidates[0];
-      actorB = candidates[1];
+      actorA = candidates[0] ?? null;
+      actorB = candidates.find((p) => p && actorA && p.id !== actorA.id) ?? null;
+    }
+
+    if (!actorA || !actorB) {
+      throw new Error(
+        "Couldn't find a good pair with these settings. Try a broader era or easier difficulty.",
+      );
     }
 
     // 🎬 BACON ROUND: ~5% chance to swap one endpoint for Kevin Bacon.
