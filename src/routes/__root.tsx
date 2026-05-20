@@ -67,6 +67,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google-site-verification", content: "S4YdAM0lesBWECFAQCv-S8bgQjvbac6vOt4x8q9Vv_A" },
       { title: "Six Degrees of Cinema — A Hollywood Movie Trivia Game" },
       {
         name: "description",
