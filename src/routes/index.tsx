@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Film, Sparkles, Loader2, CalendarDays, Flame, Trophy, BarChart3, HelpCircle, Settings } from "lucide-react";
 import { createGame, getDailyChallenge } from "@/lib/game.functions";
 import { useLocalStorage } from "@/hooks/use-local-storage";
@@ -129,11 +129,16 @@ function HomePage() {
     navigate({ to: "/game/$gameId", params: { gameId: streak.state.currentGameId } });
   }
 
-  const todayLabel = new Date().toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
+  const [todayLabel, setTodayLabel] = useState("");
+  useEffect(() => {
+    setTodayLabel(
+      new Date().toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      })
+    );
+  }, []);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-start px-4 py-6 sm:py-10">
