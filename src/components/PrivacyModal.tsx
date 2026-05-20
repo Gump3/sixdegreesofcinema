@@ -6,9 +6,9 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
       <div className="space-y-5 text-sm text-muted-foreground leading-relaxed">
         <Section title="Introduction">
           <p>
-            Six Degrees of Cinema is a free movie trivia game. This policy explains the limited
+            Six Degrees of Cinema ("we", "us", "our") is a free movie trivia game. This policy explains the limited
             data the game involves and how it is used. We do not run ads, trackers, or analytics
-            pixels.
+            pixels. By accessing the game, you consent to the collection and use of information as described in this Privacy Policy.
           </p>
         </Section>
 
@@ -16,7 +16,7 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
           <p className="font-semibold text-foreground">Usage information</p>
           <p>
             Our hosting provider may automatically log standard request data (IP address,
-            browser/device type, timestamps) for security, abuse prevention, and reliability. This
+            browser/device type, timestamps, game activity, pages visited) for security, abuse prevention, and reliability. This
             is not used for advertising or profiling.
           </p>
           <p className="font-semibold text-foreground mt-3">Game data</p>
@@ -34,7 +34,7 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
 
         <Section title="How We Use Your Information">
           <p>
-            To run the game, validate chains, generate the shared Daily Challenge, and keep the
+            We use your information to run the game, validate chains, generate the shared Daily Challenge, and keep the
             service reliable. We do not sell, rent, or share data with advertisers.
           </p>
         </Section>
@@ -70,8 +70,7 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
 
         <Section title="Children's Privacy">
           <p>
-            The game is suitable for all ages, but it is not directed at children under 13, and we
-            do not knowingly collect personal information from children.
+            The game is not intended for use by children under the age of 13 and we do not knowingly collect personally identifiable information from children under 13.
           </p>
         </Section>
 
