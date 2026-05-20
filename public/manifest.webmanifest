@@ -1,0 +1,16 @@
+{
+  "name": "Six Degrees of Cinema",
+  "short_name": "6° Cinema",
+  "description": "Connect two movie stars in six degrees or fewer. A daily Hollywood puzzle.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0907",
+  "theme_color": "#0a0907",
+  "icons": [
+    { "src": "/app-icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
