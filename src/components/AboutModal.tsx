@@ -7,7 +7,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
         <p>
           Inspired by the classic{" "}
           <span className="text-gold">Six Degrees of Kevin Bacon</span> game that has lived in pop
-          culture for decades, this app brings that same idea to the entire world of Hollywood.
+          culture for decades, this game brings that same idea to the entire world of Hollywood.
         </p>
         <p>
           Movie fans of all kinds can test their knowledge and creativity by connecting two
