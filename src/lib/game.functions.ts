@@ -357,7 +357,16 @@ export const getMoviePeopleFn = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ movieId: z.number().int().positive() }).parse(input))
   .handler(async ({ data }) => {
     const credits = await getMovieCredits(data.movieId);
-    const top = credits.cast.slice(0, 30).map((p) => ({ ...personDto(p), role: "cast" as const }));
+    // Top 5 billed always shown; below that, require notability so the picker
+    // doesn't surface obscure supporting actors no one would recognize.
+    const NOTABLE_PERSON_POPULARITY = 4;
+    const topBilled = credits.cast.slice(0, 5);
+    const restNotable = credits.cast
+      .slice(5, 40)
+      .filter((p) => (p.popularity ?? 0) >= NOTABLE_PERSON_POPULARITY);
+    const top = [...topBilled, ...restNotable]
+      .slice(0, 30)
+      .map((p) => ({ ...personDto(p), role: "cast" as const }));
     const dirs = credits.directors.map((p) => ({ ...personDto(p), role: "director" as const }));
     const seen = new Set<number>();
     const out: Array<ReturnType<typeof personDto> & { role: "cast" | "director" }> = [];
