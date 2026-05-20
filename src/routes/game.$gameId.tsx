@@ -481,7 +481,7 @@ function GameScreen() {
         {/* Actor pair */}
         <div className="grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-6 items-center mb-6">
           <ActorCard actor={game.actorA} label="Start" />
-          <div className="text-gold text-2xl font-display">↔</div>
+          <div className="text-gold text-2xl font-display">→</div>
           <ActorCard actor={game.actorB} label="End" />
         </div>
 
