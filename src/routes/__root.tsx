@@ -91,6 +91,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
+      // PWA / iOS home screen
+      { name: "theme-color", content: "#0a0907" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "6° Cinema" },
     ],
     scripts: [
       {
@@ -114,6 +120,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/app-icon.png" },
+      { rel: "icon", type: "image/png", href: "/app-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
