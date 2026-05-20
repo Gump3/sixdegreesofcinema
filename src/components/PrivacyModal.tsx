@@ -82,12 +82,6 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
           </p>
         </Section>
 
-        <Section title="Contact Us">
-          <p>
-            Questions about this policy? Reach out via the project's public listing. (This is an
-            anonymized hobby project — no personal email is published.)
-          </p>
-        </Section>
       </div>
     </ModalShell>
   );
