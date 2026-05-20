@@ -134,7 +134,27 @@ export type Movie = {
   poster_path: string | null;
   release_date?: string;
   popularity?: number;
+  vote_count?: number;
 };
+
+// ===== Notability thresholds =====
+// Goal: keep "who is this?" actors and movies out of the picker, hints, and BFS,
+// without making the path solver unable to find a route. Tuned from TMDB norms:
+//   - vote_count >= 200 filters out indie/obscure movies; mainstream Hollywood
+//     films almost always clear this easily.
+//   - popularity >= 5 for movies removes long-tail festival/limited releases.
+//   - popularity >= 4 for people removes background actors / non-notable crew.
+const MIN_MOVIE_VOTE_COUNT = 200;
+const MIN_MOVIE_POPULARITY = 5;
+const MIN_PERSON_POPULARITY = 4;
+
+export function isNotableMovie(m: { vote_count?: number; popularity?: number }): boolean {
+  return (m.vote_count ?? 0) >= MIN_MOVIE_VOTE_COUNT && (m.popularity ?? 0) >= MIN_MOVIE_POPULARITY;
+}
+
+export function isNotablePerson(p: { popularity?: number }): boolean {
+  return (p.popularity ?? 0) >= MIN_PERSON_POPULARITY;
+}
 
 export type ChainStep =
   | { kind: "person"; id: number; name: string; image: string | null }
