@@ -128,6 +128,11 @@
   background-image:
     radial-gradient(ellipse at top, oklch(0.18 0 0 / 0.6), transparent 60%),
     radial-gradient(ellipse at bottom, oklch(0.12 0 0 / 0.4), transparent 70%);
+}
+/* Apply grayscale only to media — putting `filter` on body/html breaks
+   position:fixed children (modals, sheets) by making body their containing block. */
+.theme-bw img,
+.theme-bw video {
   filter: grayscale(100%);
 }
 
