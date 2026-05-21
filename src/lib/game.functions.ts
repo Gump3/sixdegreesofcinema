@@ -77,28 +77,41 @@ export const createGame = createServerFn({ method: "POST" })
         difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
         generation: z.enum(["boomer", "genx", "millennial", "genz", "all"]).default("all"),
         excludeIds: z.array(z.number().int()).max(50).optional(),
+        suppressIds: z.array(z.number().int()).max(200).optional(),
+        frequency: z.record(z.string(), z.number().int().nonnegative()).optional(),
+        excludePairs: z.array(z.string().max(40)).max(60).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { mode, difficulty, generation, excludeIds } = data;
+    const { mode, difficulty, generation, excludeIds, suppressIds, frequency, excludePairs } = data;
     const eraRange = GENERATION_RANGES[generation] ?? null;
 
-    // Pull a popularity pool. Hard mode digs deeper for less obvious picks.
-    // When a generation filter is on, sweep more pages since filtering shrinks each page.
-    const basePages = difficulty === "hard" ? [1, 2, 3, 4, 5] : difficulty === "medium" ? [1, 2, 3] : [1, 2];
-    const pages = eraRange ? [...basePages, basePages[basePages.length - 1] + 1, basePages[basePages.length - 1] + 2, basePages[basePages.length - 1] + 3] : basePages;
+    // Deeper popularity sweep — same TMDB cost per page (cached), much wider pool.
+    // Easy ~80–100 unique actors, Hard ~150+. Era filter widens further to survive culling.
+    const basePages =
+      difficulty === "hard"
+        ? [1, 2, 3, 4, 5, 6, 7, 8]
+        : difficulty === "medium"
+          ? [1, 2, 3, 4, 5, 6]
+          : [1, 2, 3, 4];
+    const pages = eraRange
+      ? [...basePages, basePages[basePages.length - 1] + 1, basePages[basePages.length - 1] + 2, basePages[basePages.length - 1] + 3]
+      : basePages;
+    // Gen Z floor: require the actor's known_for to include a movie with vote_count >= 500.
+    // Filters out obscure indie / TV-only credits while keeping recognizably-Gen-Z stars.
+    const minKnownForVotes = generation === "genz" ? 500 : 0;
     const pool: Person[] = [];
     for (const page of pages) {
       try {
-        const r = await getPopularPeoplePage(page, { eraRange });
+        const r = await getPopularPeoplePage(page, { eraRange, minKnownForVotes });
         pool.push(...r.filter((p) => p.known_for_department === "Acting"));
       } catch {
         // ignore page errors
       }
     }
-    // Fallback: if the era filter starved the pool, retry without it.
-    if (pool.length < 2 && eraRange) {
+    // Fallback: if the era/Gen Z filter starved the pool, retry without those filters.
+    if (pool.length < 2 && (eraRange || minKnownForVotes > 0)) {
       for (const page of basePages) {
         try {
           const r = await getPopularPeoplePage(page);
@@ -117,21 +130,54 @@ export const createGame = createServerFn({ method: "POST" })
     const seen = new Set<number>();
     const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
 
-    // Avoid recently-seen actors to give players more variety. Only apply the
-    // exclusion if the remaining pool stays healthy enough to still pick a pair.
+    // Hard-exclude recently-shown actors when the pool can spare them.
     const excludeSet = new Set(excludeIds ?? []);
     const filteredForVariety = excludeSet.size
       ? unique.filter((p) => !excludeSet.has(p.id))
       : unique;
     const candidates = filteredForVariety.length >= 8 ? filteredForVariety : unique;
 
+    // ===== Weighted sampling =====
+    // Penalize: (1) actors seen anywhere in the recent window (soft suppression),
+    //           (2) hub actors who appeared often as endpoints (frequency penalty).
+    const suppressSet = new Set(suppressIds ?? []);
+    const freq = frequency ?? {};
+    const pairBlock = new Set(excludePairs ?? []);
+    const pairKey = (x: number, y: number) => (x < y ? `${x}-${y}` : `${y}-${x}`);
+
+    const weightOf = (p: Person) => {
+      const f = freq[String(p.id)] ?? 0;
+      let w = 1 / (1 + f); // hub downweight
+      if (suppressSet.has(p.id)) w *= 0.3; // soft cooldown
+      return w;
+    };
+    const weights = candidates.map(weightOf);
+    const pickWeighted = (excludeId?: number): Person | null => {
+      let total = 0;
+      for (let i = 0; i < candidates.length; i++) {
+        if (excludeId !== undefined && candidates[i].id === excludeId) continue;
+        total += weights[i];
+      }
+      if (total <= 0) return null;
+      let r = Math.random() * total;
+      for (let i = 0; i < candidates.length; i++) {
+        if (excludeId !== undefined && candidates[i].id === excludeId) continue;
+        r -= weights[i];
+        if (r <= 0) return candidates[i];
+      }
+      return candidates[candidates.length - 1] ?? null;
+    };
+
     let actorA: Person | null = null;
     let actorB: Person | null = null;
 
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const a = candidates[Math.floor(Math.random() * candidates.length)];
-      const b = candidates[Math.floor(Math.random() * candidates.length)];
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const a = pickWeighted();
+      const b = a ? pickWeighted(a.id) : null;
       if (!a || !b || a.id === b.id) continue;
+
+      // Avoid exact-pair reuse from recent history.
+      if (pairBlock.has(pairKey(a.id, b.id))) continue;
 
       // For Hard, avoid trivial direct-costar pairs (same movie).
       if (difficulty === "hard") {
@@ -154,7 +200,7 @@ export const createGame = createServerFn({ method: "POST" })
     }
 
     if (!actorA || !actorB) {
-      // Fallback: pick first two distinct
+      // Fallback: pick first two distinct (ignore pair-block as a last resort).
       actorA = candidates[0] ?? null;
       actorB = candidates.find((p) => p && actorA && p.id !== actorA.id) ?? null;
     }
@@ -164,6 +210,7 @@ export const createGame = createServerFn({ method: "POST" })
         "Couldn't find a good pair with these settings. Try a broader era or easier difficulty.",
       );
     }
+
 
     // 🎬 BACON ROUND: ~5% chance to swap one endpoint for Kevin Bacon.
     // Skip if either picked actor *is* already Bacon (rare but possible).
