@@ -334,9 +334,15 @@ function GameScreen() {
         const raw = window.localStorage.getItem("sdh:generation");
         if (raw) generation = JSON.parse(raw);
       } catch { /* ignore */ }
-      const { getRecentActorIds, rememberActorIds } = await import("@/lib/recent-actors");
-      const res = await createGameFn({ data: { mode: game.mode, difficulty: game.difficulty, generation, excludeIds: getRecentActorIds() } });
-      rememberActorIds([res.actorA?.id, res.actorB?.id]);
+      const { getRecentActorIds, getSuppressActorIds, getActorFrequency, getRecentPairs, rememberEndpointPair } = await import("@/lib/recent-actors");
+      const res = await createGameFn({ data: {
+        mode: game.mode, difficulty: game.difficulty, generation,
+        excludeIds: getRecentActorIds(),
+        suppressIds: getSuppressActorIds(),
+        frequency: getActorFrequency(),
+        excludePairs: getRecentPairs(),
+      } });
+      rememberEndpointPair(res.actorA?.id, res.actorB?.id);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
       setValidationLog((l) => [...l, `New pair error: ${(e as Error).message}`]);
@@ -348,9 +354,15 @@ function GameScreen() {
     if (!streak.state.settings || advancingStreak) return;
     setAdvancingStreak(true);
     try {
-      const { getRecentActorIds, rememberActorIds } = await import("@/lib/recent-actors");
-      const res = await createGameFn({ data: { ...streak.state.settings, excludeIds: getRecentActorIds() } });
-      rememberActorIds([res.actorA?.id, res.actorB?.id]);
+      const { getRecentActorIds, getSuppressActorIds, getActorFrequency, getRecentPairs, rememberEndpointPair } = await import("@/lib/recent-actors");
+      const res = await createGameFn({ data: {
+        ...streak.state.settings,
+        excludeIds: getRecentActorIds(),
+        suppressIds: getSuppressActorIds(),
+        frequency: getActorFrequency(),
+        excludePairs: getRecentPairs(),
+      } });
+      rememberEndpointPair(res.actorA?.id, res.actorB?.id);
       streak.advance(res.gameId);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
     } catch (e) {
