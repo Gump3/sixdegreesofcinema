@@ -269,7 +269,7 @@ export async function getMovieCredits(movieId: number): Promise<{
   return { cast, directors };
 }
 
-type KnownForItem = { media_type?: string; original_language?: string; release_date?: string };
+type KnownForItem = { media_type?: string; original_language?: string; release_date?: string; vote_count?: number; popularity?: number };
 
 /**
  * Hollywood eligibility: the person's TMDB `known_for` array must contain
@@ -328,7 +328,7 @@ export async function searchMovies(query: string): Promise<Movie[]> {
 
 export async function getPopularPeoplePage(
   page: number,
-  opts: { eraRange?: [number, number] | null } = {},
+  opts: { eraRange?: [number, number] | null; minKnownForVotes?: number } = {},
 ): Promise<Person[]> {
   const data = await tmdb<{ results?: (Person & { known_for?: KnownForItem[] })[] }>(
     `/person/popular`,
@@ -336,6 +336,7 @@ export async function getPopularPeoplePage(
     "person_popular",
   );
   const era = opts.eraRange ?? null;
+  const minVotes = opts.minKnownForVotes ?? 0;
   const inEra = (k: KnownForItem) => {
     if (!era || !k.release_date) return true;
     const y = Number(k.release_date.slice(0, 4));
@@ -345,7 +346,19 @@ export async function getPopularPeoplePage(
     .filter((p) => p.known_for_department === "Acting" || p.known_for_department === "Directing")
     .filter((p) => isHollywoodKnownFor(p.known_for))
     .filter((p) => isNotablePerson(p))
-    .filter((p) => (era ? (p.known_for ?? []).some((k) => k.media_type === "movie" && k.original_language === "en" && inEra(k)) : true));
+    .filter((p) =>
+      era
+        ? (p.known_for ?? []).some(
+            (k) =>
+              k.media_type === "movie" &&
+              k.original_language === "en" &&
+              inEra(k) &&
+              (k.vote_count ?? 0) >= minVotes,
+          )
+        : minVotes > 0
+          ? (p.known_for ?? []).some((k) => k.media_type === "movie" && (k.vote_count ?? 0) >= minVotes)
+          : true,
+    );
 }
 
 
