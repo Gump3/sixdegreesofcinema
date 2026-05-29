@@ -171,6 +171,12 @@ export const createGame = createServerFn({ method: "POST" })
     let actorA: Person | null = null;
     let actorB: Person | null = null;
 
+    // Easy/Medium: require endpoints to have a meaningful filmography so casual
+    // players aren't asked to connect relative unknowns. (counts use our notable-
+    // movie filter from getPersonCredits, not raw TMDB totals.)
+    const minNotableCredits =
+      difficulty === "easy" ? 8 : difficulty === "medium" ? 5 : 0;
+
     for (let attempt = 0; attempt < 30; attempt++) {
       const a = pickWeighted();
       const b = a ? pickWeighted(a.id) : null;
@@ -179,16 +185,23 @@ export const createGame = createServerFn({ method: "POST" })
       // Avoid exact-pair reuse from recent history.
       if (pairBlock.has(pairKey(a.id, b.id))) continue;
 
-      // For Hard, avoid trivial direct-costar pairs (same movie).
-      if (difficulty === "hard") {
+      // Fetch credits if we need either the credits-count check (easy/medium)
+      // or the same-movie-costar check (hard).
+      if (minNotableCredits > 0 || difficulty === "hard") {
         try {
           const [aCredits, bCredits] = await Promise.all([
             getPersonCredits(a.id),
             getPersonCredits(b.id),
           ]);
-          const aMovieIds = new Set(aCredits.acting.slice(0, 30).map((m) => m.id));
-          const shared = bCredits.acting.slice(0, 30).some((m) => aMovieIds.has(m.id));
-          if (shared) continue;
+          if (minNotableCredits > 0) {
+            if (aCredits.acting.length < minNotableCredits) continue;
+            if (bCredits.acting.length < minNotableCredits) continue;
+          }
+          if (difficulty === "hard") {
+            const aMovieIds = new Set(aCredits.acting.slice(0, 30).map((m) => m.id));
+            const shared = bCredits.acting.slice(0, 30).some((m) => aMovieIds.has(m.id));
+            if (shared) continue;
+          }
         } catch {
           // ignore and accept the pair
         }
