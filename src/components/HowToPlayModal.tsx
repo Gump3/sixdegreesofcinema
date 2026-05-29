@@ -99,8 +99,11 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
           Allowed: shared <span className="text-gold">acting</span> credit (incl. voice), or one
           person <span className="text-gold">directed</span> the movie.
         </li>
-        <li>Writing/producing credits don't count.</li>
-        <li>Stuck? Use a hint (-10 pts) or Give Up to reveal the shortest path.</li>
+        <li>Writing/producing credits don't count. Cameos and uncredited appearances are excluded.</li>
+        <li>
+          Stuck? Use a hint (<span className="text-foreground">−10 pts</span> in Movie Noob,{" "}
+          <span className="text-foreground">−20 pts</span> in Movie Buff) or Give Up to reveal the shortest path.
+        </li>
       </ul>
 
       <div className="border-t border-border pt-5">

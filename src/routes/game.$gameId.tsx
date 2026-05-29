@@ -597,6 +597,29 @@ function GameScreen() {
           </div>
         )}
 
+        {/* Secondary actions during play — appear after at least one degree
+            has been attempted (a step added, a hint used, or a wrong try). */}
+        {!result && (degreesUsed >= 1 || hintsUsed > 0 || invalidAttempts > 0) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={playAgain}
+              className="border border-border text-foreground py-2 px-3 rounded-md text-xs hover:bg-secondary inline-flex items-center gap-2"
+            >
+              <Film className="h-3.5 w-3.5" /> Home
+            </button>
+            {!isStreakGame && (
+              <button
+                onClick={newPair}
+                disabled={refreshing}
+                className="border border-border text-foreground py-2 px-3 rounded-md text-xs hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                New pair
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Result */}
         {result && (
           <div className="mt-6 bg-card border border-border rounded-xl p-5">

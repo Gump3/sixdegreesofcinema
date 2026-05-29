@@ -148,14 +148,27 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return candidates;
+    // Word-prefix match: the typed letters must match the start of the
+    // full name OR the start of any word inside it. ("dam" → "Matt Damon",
+    // but NOT "Adam Sandler"; "wash" → "Denzel Washington".)
     return candidates.filter((c) => {
-      const name = "name" in c ? c.name : c.title;
-      return name.toLowerCase().includes(q);
+      const name = ("name" in c ? c.name : c.title).toLowerCase();
+      if (name.startsWith(q)) return true;
+      return name.split(/[\s.\-:'"()&,/]+/).some((w) => w.startsWith(q));
     });
   }, [candidates, query]);
 
+  // Word-prefix match for remote results too (TMDB returns substring hits).
+  const matchesPrefix = (text: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const n = text.toLowerCase();
+    if (n.startsWith(q)) return true;
+    return n.split(/[\s.\-:'"()&,/]+/).some((w) => w.startsWith(q));
+  };
+  const filteredRemote = remoteResults.filter((r) => matchesPrefix(r.name));
   const showRemote = mode === "buff" && nextKind === "person" && query.trim().length >= 2 && filtered.length === 0;
-  const visible: (PersonOpt | MovieOpt)[] = showRemote ? remoteResults : filtered;
+  const visible: (PersonOpt | MovieOpt)[] = showRemote ? filteredRemote : filtered;
   // Buff mode hides the list until user types
   const shouldShowList = mode === "noob" || query.trim().length > 0;
 
@@ -164,7 +177,8 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
     if (mode !== "buff" || nextKind !== "movie") return [];
     if (query.trim().length < 2) return [];
     const localIds = new Set(candidates.map((c) => c.id));
-    return remoteMovies.filter((m) => !localIds.has(m.id)).slice(0, 6);
+    return remoteMovies.filter((m) => !localIds.has(m.id) && matchesPrefix(m.title)).slice(0, 6);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, nextKind, query, candidates, remoteMovies]);
 
   const handlePick = useCallback(
