@@ -158,8 +158,17 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
     });
   }, [candidates, query]);
 
+  // Word-prefix match for remote results too (TMDB returns substring hits).
+  const matchesPrefix = (text: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const n = text.toLowerCase();
+    if (n.startsWith(q)) return true;
+    return n.split(/[\s.\-:'"()&,/]+/).some((w) => w.startsWith(q));
+  };
+  const filteredRemote = remoteResults.filter((r) => matchesPrefix(r.name));
   const showRemote = mode === "buff" && nextKind === "person" && query.trim().length >= 2 && filtered.length === 0;
-  const visible: (PersonOpt | MovieOpt)[] = showRemote ? remoteResults : filtered;
+  const visible: (PersonOpt | MovieOpt)[] = showRemote ? filteredRemote : filtered;
   // Buff mode hides the list until user types
   const shouldShowList = mode === "noob" || query.trim().length > 0;
 
@@ -168,7 +177,8 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
     if (mode !== "buff" || nextKind !== "movie") return [];
     if (query.trim().length < 2) return [];
     const localIds = new Set(candidates.map((c) => c.id));
-    return remoteMovies.filter((m) => !localIds.has(m.id)).slice(0, 6);
+    return remoteMovies.filter((m) => !localIds.has(m.id) && matchesPrefix(m.title)).slice(0, 6);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, nextKind, query, candidates, remoteMovies]);
 
   const handlePick = useCallback(
