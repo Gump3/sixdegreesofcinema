@@ -148,9 +148,13 @@ export function StepPicker({ mode, nextKind, context, onPick, onCancel }: Props)
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return candidates;
+    // Word-prefix match: the typed letters must match the start of the
+    // full name OR the start of any word inside it. ("dam" → "Matt Damon",
+    // but NOT "Adam Sandler"; "wash" → "Denzel Washington".)
     return candidates.filter((c) => {
-      const name = "name" in c ? c.name : c.title;
-      return name.toLowerCase().includes(q);
+      const name = ("name" in c ? c.name : c.title).toLowerCase();
+      if (name.startsWith(q)) return true;
+      return name.split(/[\s.\-:'"()&,/]+/).some((w) => w.startsWith(q));
     });
   }, [candidates, query]);
 
