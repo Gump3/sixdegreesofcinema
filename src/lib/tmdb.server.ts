@@ -189,17 +189,27 @@ export function isEligibleMovieBasic(m: {
   return t <= Date.now();
 }
 
+// Cameo / uncredited / "as self" detection. TMDB exposes these signals via the
+// `character` string and (rarely) by listing a person in "Self" department.
+// We exclude them so chain edges only reflect real acting roles.
+const CAMEO_RE = /\b(cameo|uncredited|himself|herself|themselves|themself|as self|self\b|narrator)\b/i;
+function isCameoCharacter(character?: string | null): boolean {
+  if (!character) return false;
+  return CAMEO_RE.test(character);
+}
+
 // ============== People & movies (high-level) ==============
 export async function getPersonCredits(personId: number): Promise<{
   acting: Movie[];
   directing: Movie[];
 }> {
   const data = await tmdb<{
-    cast?: Array<Movie & { release_date?: string; vote_count?: number }>;
+    cast?: Array<Movie & { release_date?: string; vote_count?: number; character?: string }>;
     crew?: Array<Movie & { job?: string; department?: string; release_date?: string; vote_count?: number }>;
   }>(`/person/${personId}/movie_credits`, {}, "credits");
 
   const acting = (data.cast ?? [])
+    .filter((m) => !isCameoCharacter(m.character))
     .filter((m) => isEligibleMovieBasic(m))
     .filter((m) => isNotableMovie(m))
     .map((m) => ({
@@ -243,11 +253,12 @@ export async function getMovieCredits(movieId: number): Promise<{
   directors: Person[];
 }> {
   const data = await tmdb<{
-    cast?: Array<Person & { order?: number }>;
+    cast?: Array<Person & { order?: number; character?: string }>;
     crew?: Array<Person & { job?: string }>;
   }>(`/movie/${movieId}/credits`, {}, "credits");
 
   const cast = (data.cast ?? [])
+    .filter((p) => !isCameoCharacter(p.character))
     .slice() // copy
     .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
     .map((p) => ({
