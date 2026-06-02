@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sixdegreesofcinema.lovable.app/sitemap.xml
+Sitemap: https://sixdegreesofcinema.com/sitemap.xml

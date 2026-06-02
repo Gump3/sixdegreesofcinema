@@ -107,12 +107,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             {
               "@type": "WebSite",
               name: "Six Degrees of Cinema",
-              url: "https://sixdegreesofcinema.lovable.app",
+              url: "https://sixdegreesofcinema.com",
             },
             {
               "@type": "Organization",
               name: "Six Degrees of Cinema",
-              url: "https://sixdegreesofcinema.lovable.app",
+              url: "https://sixdegreesofcinema.com",
             },
           ],
         }),
