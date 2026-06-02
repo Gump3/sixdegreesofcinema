@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { AboutModal } from "./AboutModal";
 import { PrivacyModal } from "./PrivacyModal";
+import { TermsModal } from "./TermsModal";
 
 export function Footer() {
-  const [open, setOpen] = useState<null | "about" | "privacy">(null);
+  const [open, setOpen] = useState<null | "about" | "privacy" | "terms">(null);
 
   return (
     <>
@@ -55,11 +56,20 @@ export function Footer() {
           >
             Privacy
           </button>
+          <span aria-hidden="true">|</span>
+          <button
+            type="button"
+            onClick={() => setOpen("terms")}
+            className="text-gold hover:underline"
+          >
+            Terms
+          </button>
         </p>
       </footer>
 
       {open === "about" && <AboutModal onClose={() => setOpen(null)} />}
       {open === "privacy" && <PrivacyModal onClose={() => setOpen(null)} />}
+      {open === "terms" && <TermsModal onClose={() => setOpen(null)} />}
     </>
   );
 }
