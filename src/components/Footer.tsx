@@ -40,7 +40,7 @@ export function Footer() {
         </p>
 
         <p className="mt-1 inline-flex items-center gap-2 flex-wrap justify-center">
-          <span>© {new Date().getFullYear()} Six Degrees of Cinema.</span>
+          <span>© {new Date().getFullYear()} Six Degrees of Cinema. All rights reserved.</span>
           <button
             type="button"
             onClick={() => setOpen("about")}
