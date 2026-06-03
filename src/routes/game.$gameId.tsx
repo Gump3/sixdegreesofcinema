@@ -760,7 +760,7 @@ function GameScreen() {
                 <Film className="h-4 w-4" />
                 Home
               </button>
-              {!isStreakGame && (
+              {!isStreakGame && !game.isDaily && (
                 <button
                   onClick={newPair}
                   disabled={refreshing}
