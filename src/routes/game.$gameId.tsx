@@ -121,6 +121,7 @@ function GameScreen() {
         shortestPath?: ChainStep[] | null;
         alternates?: ChainStep[][];
         gaveUp?: boolean;
+        fullyHinted?: boolean;
       }
   >(null);
   const [alternatesLoading, setAlternatesLoading] = useState(false);
