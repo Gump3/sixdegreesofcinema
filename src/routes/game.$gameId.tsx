@@ -121,6 +121,7 @@ function GameScreen() {
         shortestPath?: ChainStep[] | null;
         alternates?: ChainStep[][];
         gaveUp?: boolean;
+        fullyHinted?: boolean;
       }
   >(null);
   const [alternatesLoading, setAlternatesLoading] = useState(false);
@@ -607,7 +608,7 @@ function GameScreen() {
             >
               <Film className="h-3.5 w-3.5" /> Home
             </button>
-            {!isStreakGame && (
+            {!isStreakGame && !game.isDaily && (
               <button
                 onClick={newPair}
                 disabled={refreshing}
@@ -637,10 +638,15 @@ function GameScreen() {
                 <p className="text-muted-foreground text-sm mt-1">
                   {result.degrees} degree{result.degrees === 1 ? "" : "s"} ·{" "}
                   <span className={
-                    (result.score ?? 0) < 0
+                    (result.score ?? 0) <= 0
                       ? "text-destructive font-semibold"
                       : "text-gold-bright font-semibold"
                   }>{result.score} pts</span>
+                  {result.fullyHinted && (
+                    <span className="ml-1 text-destructive/90">
+                      (every step was a hint — no points awarded)
+                    </span>
+                  )}
                   {result.isBaconRound && (result.invalidPenalty ?? 0) > 0 && (
                     <span className="ml-1 text-amber-300/80">
                       (Bacon penalty: −{result.invalidPenalty})
@@ -760,7 +766,7 @@ function GameScreen() {
                 <Film className="h-4 w-4" />
                 Home
               </button>
-              {!isStreakGame && (
+              {!isStreakGame && !game.isDaily && (
                 <button
                   onClick={newPair}
                   disabled={refreshing}

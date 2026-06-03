@@ -149,12 +149,15 @@ function HomePage() {
 
   const [todayLabel, setTodayLabel] = useState("");
   useEffect(() => {
+    // Daily resets at 00:00 UTC so every player worldwide gets the same puzzle.
+    // Show the UTC date here to match the badge on the game page.
     setTodayLabel(
       new Date().toLocaleDateString(undefined, {
         weekday: "long",
         month: "short",
         day: "numeric",
-      })
+        timeZone: "UTC",
+      }) + " (UTC)"
     );
   }, []);
 

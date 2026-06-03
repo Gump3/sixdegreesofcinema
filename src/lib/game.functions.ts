@@ -557,7 +557,15 @@ export const validateChain = createServerFn({ method: "POST" })
     // Allow negative for Bacon rounds (high risk / high reward). Normal games
     // still floor at 0 so casual players never see negatives.
     const rawScore = solveScore - invalidPenalty;
-    const score = isBaconRound ? rawScore : Math.max(0, rawScore);
+    let score = isBaconRound ? rawScore : Math.max(0, rawScore);
+
+    // Anti-cheese rule: if the player hinted their way through every
+    // intermediate step (everything between Actor A and Actor B was added
+    // by Hint), the solve doesn't count for points — same effect as Give Up.
+    // chain.length - 2 = number of steps the player has to fill in.
+    const stepsBetween = Math.max(0, chain.length - 2);
+    const fullyHinted = stepsBetween > 0 && data.hintsUsed >= stepsBetween;
+    if (fullyHinted) score = 0;
 
     const shortest = game.data.shortest_path as unknown as ChainStep[] | null;
     const alternates = game.data.alternates as unknown as ChainStep[][] | null;
@@ -566,6 +574,7 @@ export const validateChain = createServerFn({ method: "POST" })
       valid: true,
       degrees,
       score,
+      fullyHinted,
       isBaconRound,
       solveMultiplier,
       invalidPenalty,
