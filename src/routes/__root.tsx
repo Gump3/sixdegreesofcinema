@@ -89,8 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Connect two movie stars in six degrees or fewer using acting and directing credits.",
       },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b3f65fa4-b7bb-45d7-b3b7-7c05190131e6/id-preview-c218b1fe--9c50da83-f9f6-4251-baec-551f0db8dd05.lovable.app-1779134867974.png" },
+      { property: "og:image", content: "https://sixdegreesofcinema.com/og.jpg" },
+      { name: "twitter:image", content: "https://sixdegreesofcinema.com/og.jpg" },
       // PWA / iOS home screen
       { name: "theme-color", content: "#0a0907" },
       { name: "apple-mobile-web-app-capable", content: "yes" },

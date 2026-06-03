@@ -1,0 +1,49 @@
+// Sentry initialization scaffold.
+//
+// This is a no-op until you set SENTRY_DSN (server) and/or VITE_SENTRY_DSN (browser).
+// When you're ready:
+//   1. Sign up at https://sentry.io and create a project (pick "React" for browser).
+//   2. Add the DSN as `VITE_SENTRY_DSN` (browser) and optionally `SENTRY_DSN` (server)
+//      via Lovable Cloud → Secrets.
+//   3. Install the SDK:    bun add @sentry/react
+//   4. Uncomment the dynamic import block below.
+//
+// We intentionally do NOT import @sentry/react at module scope so the bundle stays
+// the same size until you opt in.
+
+export async function initSentry() {
+  const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+  if (!dsn) return;
+
+  try {
+    // String-concat to bypass TS resolution until the package is installed.
+    const mod = "@sentry/react";
+    const Sentry = (await import(/* @vite-ignore */ mod)) as any;
+    Sentry.init({
+      dsn,
+      tracesSampleRate: 0.1,
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 0.1,
+      environment: import.meta.env.MODE,
+    });
+  } catch {
+    console.warn("[sentry] DSN set but @sentry/react is not installed. Run: bun add @sentry/react");
+  }
+}
+
+export function captureServerError(error: unknown, context?: Record<string, unknown>) {
+  const dsn = process.env.SENTRY_DSN;
+  if (!dsn) return;
+
+  const mod = "@sentry/react";
+  import(/* @vite-ignore */ mod)
+    .then((Sentry: any) => {
+      if (!Sentry.getCurrentHub().getClient()) {
+        Sentry.init({ dsn, environment: process.env.NODE_ENV });
+      }
+      Sentry.captureException(error, { extra: context });
+    })
+    .catch(() => {
+      /* package not installed — silent */
+    });
+}

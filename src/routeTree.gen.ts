@@ -10,12 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GameGameIdRouteImport } from './routes/game.$gameId'
+import { Route as ApiPublicHooksWeeklySummaryRouteImport } from './routes/api/public/hooks/weekly-summary'
+import { Route as ApiPublicHooksCleanupGamesRouteImport } from './routes/api/public/hooks/cleanup-games'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -28,35 +36,78 @@ const GameGameIdRoute = GameGameIdRouteImport.update({
   path: '/game/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWeeklySummaryRoute =
+  ApiPublicHooksWeeklySummaryRouteImport.update({
+    id: '/api/public/hooks/weekly-summary',
+    path: '/api/public/hooks/weekly-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCleanupGamesRoute =
+  ApiPublicHooksCleanupGamesRouteImport.update({
+    id: '/api/public/hooks/cleanup-games',
+    path: '/api/public/hooks/cleanup-games',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/game/$gameId': typeof GameGameIdRoute
+  '/api/public/hooks/cleanup-games': typeof ApiPublicHooksCleanupGamesRoute
+  '/api/public/hooks/weekly-summary': typeof ApiPublicHooksWeeklySummaryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/game/$gameId': typeof GameGameIdRoute
+  '/api/public/hooks/cleanup-games': typeof ApiPublicHooksCleanupGamesRoute
+  '/api/public/hooks/weekly-summary': typeof ApiPublicHooksWeeklySummaryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/game/$gameId': typeof GameGameIdRoute
+  '/api/public/hooks/cleanup-games': typeof ApiPublicHooksCleanupGamesRoute
+  '/api/public/hooks/weekly-summary': typeof ApiPublicHooksWeeklySummaryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sitemap.xml' | '/game/$gameId'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/sitemap.xml'
+    | '/game/$gameId'
+    | '/api/public/hooks/cleanup-games'
+    | '/api/public/hooks/weekly-summary'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sitemap.xml' | '/game/$gameId'
-  id: '__root__' | '/' | '/sitemap.xml' | '/game/$gameId'
+  to:
+    | '/'
+    | '/admin'
+    | '/sitemap.xml'
+    | '/game/$gameId'
+    | '/api/public/hooks/cleanup-games'
+    | '/api/public/hooks/weekly-summary'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/sitemap.xml'
+    | '/game/$gameId'
+    | '/api/public/hooks/cleanup-games'
+    | '/api/public/hooks/weekly-summary'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   GameGameIdRoute: typeof GameGameIdRoute
+  ApiPublicHooksCleanupGamesRoute: typeof ApiPublicHooksCleanupGamesRoute
+  ApiPublicHooksWeeklySummaryRoute: typeof ApiPublicHooksWeeklySummaryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +117,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -82,24 +140,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GameGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/weekly-summary': {
+      id: '/api/public/hooks/weekly-summary'
+      path: '/api/public/hooks/weekly-summary'
+      fullPath: '/api/public/hooks/weekly-summary'
+      preLoaderRoute: typeof ApiPublicHooksWeeklySummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/cleanup-games': {
+      id: '/api/public/hooks/cleanup-games'
+      path: '/api/public/hooks/cleanup-games'
+      fullPath: '/api/public/hooks/cleanup-games'
+      preLoaderRoute: typeof ApiPublicHooksCleanupGamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   GameGameIdRoute: GameGameIdRoute,
+  ApiPublicHooksCleanupGamesRoute: ApiPublicHooksCleanupGamesRoute,
+  ApiPublicHooksWeeklySummaryRoute: ApiPublicHooksWeeklySummaryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

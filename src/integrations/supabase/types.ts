@@ -79,7 +79,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_game_metrics: {
+        Row: {
+          bacon: number | null
+          daily: number | null
+          day: string | null
+          total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

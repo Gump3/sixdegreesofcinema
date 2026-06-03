@@ -71,8 +71,14 @@ export function TermsModal({ onClose }: { onClose: () => void }) {
 
         <Section title="Contact">
           <p>
-            Questions about these Terms? Reach out via the channels listed on the game's About
-            page.
+            Questions about these Terms? Email{" "}
+            <a
+              href="mailto:thereeldispatch@gmail.com"
+              className="text-gold hover:underline"
+            >
+              thereeldispatch@gmail.com
+            </a>
+            .
           </p>
         </Section>
       </div>
