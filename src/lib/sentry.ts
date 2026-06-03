@@ -16,8 +16,9 @@ export async function initSentry() {
   if (!dsn) return;
 
   try {
-    // @ts-expect-error - optional dependency, only installed once user adds DSN
-    const Sentry = await import("@sentry/react");
+    // String-concat to bypass TS resolution until the package is installed.
+    const mod = "@sentry/react";
+    const Sentry = (await import(/* @vite-ignore */ mod)) as any;
     Sentry.init({
       dsn,
       tracesSampleRate: 0.1,
@@ -25,8 +26,7 @@ export async function initSentry() {
       replaysOnErrorSampleRate: 0.1,
       environment: import.meta.env.MODE,
     });
-  } catch (err) {
-    // Package not installed yet — fail silently in dev.
+  } catch {
     console.warn("[sentry] DSN set but @sentry/react is not installed. Run: bun add @sentry/react");
   }
 }
@@ -35,11 +35,9 @@ export function captureServerError(error: unknown, context?: Record<string, unkn
   const dsn = process.env.SENTRY_DSN;
   if (!dsn) return;
 
-  // Server-side Sentry uses the same SDK in the Workers runtime.
-  // Lazy import so the bundle isn't paying for it when unused.
-  import("@sentry/react")
-    // @ts-expect-error - optional dep
-    .then((Sentry) => {
+  const mod = "@sentry/react";
+  import(/* @vite-ignore */ mod)
+    .then((Sentry: any) => {
       if (!Sentry.getCurrentHub().getClient()) {
         Sentry.init({ dsn, environment: process.env.NODE_ENV });
       }

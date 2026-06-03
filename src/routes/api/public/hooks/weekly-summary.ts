@@ -29,14 +29,16 @@ export const Route = createFileRoute("/api/public/hooks/weekly-summary")({
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-          const { data: rows, error } = await supabaseAdmin.rpc("admin_game_metrics");
+          const { data: rowsRaw, error } = await (supabaseAdmin as any)
+            .from("admin_game_metrics")
+            .select("*")
+            .order("day", { ascending: false })
+            .limit(7);
           if (error) throw new Error(error.message);
+          const rows = (rowsRaw ?? []) as Array<{ day: string; total: number; daily: number; bacon: number }>;
 
-          const last7 = (rows ?? []).slice(0, 7);
-          const totalGames = last7.reduce(
-            (sum: number, r: { total: number }) => sum + (r.total ?? 0),
-            0,
-          );
+          const last7 = rows;
+          const totalGames = last7.reduce((sum, r) => sum + (r.total ?? 0), 0);
 
           const html = `
             <h2>Six Degrees of Cinema — weekly summary</h2>

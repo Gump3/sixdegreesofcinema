@@ -23,10 +23,14 @@ const getAdminMetrics = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: rows, error } = await supabaseAdmin.rpc("admin_game_metrics");
+    const { data: rows, error } = await (supabaseAdmin as any)
+      .from("admin_game_metrics")
+      .select("*")
+      .order("day", { ascending: false })
+      .limit(60);
     if (error) throw new Error(error.message);
 
-    return { configured: true as const, rows: rows ?? [] };
+    return { configured: true as const, rows: (rows ?? []) as Array<{ day: string; total: number; daily: number; bacon: number }> };
   });
 
 const adminQueryOptions = (token: string) =>
