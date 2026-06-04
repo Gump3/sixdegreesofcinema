@@ -32,6 +32,7 @@ import type { ChainStep } from "@/lib/types";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
 import { useStats } from "@/hooks/use-stats";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: GameScreen,
