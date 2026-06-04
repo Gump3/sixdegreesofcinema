@@ -1,14 +1,12 @@
 // Admin metrics dashboard — gated by a query param secret.
 //
 // Usage: /admin?token=<ADMIN_TOKEN>
-//
-// ADMIN_TOKEN must be set as a secret in Lovable Cloud. If unset, this page
-// shows a setup hint rather than a blank screen.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
+import { getAnalyticsSummary } from "@/lib/analytics.functions";
 
 const getAdminMetrics = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: z.string().min(1) }).parse(input))
@@ -37,6 +35,13 @@ const adminQueryOptions = (token: string) =>
   queryOptions({
     queryKey: ["admin-metrics", token],
     queryFn: () => getAdminMetrics({ data: { token } }),
+    retry: false,
+  });
+
+const engagementQueryOptions = (token: string) =>
+  queryOptions({
+    queryKey: ["admin-engagement", token],
+    queryFn: () => getAnalyticsSummary({ data: { token } }),
     retry: false,
   });
 
@@ -94,30 +99,104 @@ function AdminInner({ token }: { token: string }) {
 
   return (
     <div className="min-h-screen bg-background p-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl text-gold-bright font-display mb-6">Daily game metrics</h1>
-        <div className="overflow-x-auto border border-border rounded-lg">
-          <table className="w-full text-sm">
-            <thead className="bg-secondary text-foreground">
-              <tr>
-                <th className="text-left px-4 py-2">Day</th>
-                <th className="text-right px-4 py-2">Games created</th>
-                <th className="text-right px-4 py-2">Daily puzzles</th>
-                <th className="text-right px-4 py-2">Bacon rounds</th>
-              </tr>
-            </thead>
-            <tbody className="text-muted-foreground">
-              {data.rows.map((r: { day: string; total: number; daily: number; bacon: number }) => (
-                <tr key={r.day} className="border-t border-border">
-                  <td className="px-4 py-2">{new Date(r.day).toLocaleDateString()}</td>
-                  <td className="px-4 py-2 text-right">{r.total}</td>
-                  <td className="px-4 py-2 text-right">{r.daily}</td>
-                  <td className="px-4 py-2 text-right">{r.bacon}</td>
+      <div className="max-w-4xl mx-auto space-y-10">
+        <EngagementSection token={token} />
+
+        <section>
+          <h2 className="text-2xl text-gold-bright font-display mb-4">Daily game metrics</h2>
+          <div className="overflow-x-auto border border-border rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary text-foreground">
+                <tr>
+                  <th className="text-left px-4 py-2">Day</th>
+                  <th className="text-right px-4 py-2">Games created</th>
+                  <th className="text-right px-4 py-2">Daily puzzles</th>
+                  <th className="text-right px-4 py-2">Bacon rounds</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="text-muted-foreground">
+                {data.rows.map((r) => (
+                  <tr key={r.day} className="border-t border-border">
+                    <td className="px-4 py-2">{new Date(r.day).toLocaleDateString()}</td>
+                    <td className="px-4 py-2 text-right">{r.total}</td>
+                    <td className="px-4 py-2 text-right">{r.daily}</td>
+                    <td className="px-4 py-2 text-right">{r.bacon}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function EngagementSection({ token }: { token: string }) {
+  const { data } = useSuspenseQuery(engagementQueryOptions(token));
+  if (!data.configured) return null;
+  return (
+    <section>
+      <h2 className="text-2xl text-gold-bright font-display mb-4">Gameplay engagement</h2>
+      <div className="grid md:grid-cols-2 gap-6">
+        <WindowCard title="Last 7 days" s={data.last_7_days} />
+        <WindowCard title="Last 30 days" s={data.last_30_days} />
+      </div>
+    </section>
+  );
+}
+
+type Summary = Awaited<ReturnType<typeof getAnalyticsSummary>> extends { last_7_days: infer S }
+  ? S
+  : never;
+
+function WindowCard({ title, s }: { title: string; s: Summary }) {
+  return (
+    <div className="border border-border rounded-lg p-4 space-y-4">
+      <h3 className="text-sm uppercase tracking-widest text-gold">{title}</h3>
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <Stat label="Unique players" value={s.unique_players} />
+        <Stat label="Starts" value={s.starts} />
+        <Stat label="Completions" value={s.completions} />
+        <Stat label="Give-ups" value={s.giveups} />
+        <Stat label="Completion rate" value={`${s.completion_rate}%`} />
+        <Stat label="Give-up rate" value={`${s.giveup_rate}%`} />
+        <Stat label="Avg solve time" value={`${s.avg_solve_seconds}s`} />
+        <Stat label="Avg degrees" value={s.avg_degrees_used} />
+        <Stat label="Daily plays" value={`${s.daily_challenge_starts} (${s.daily_share_of_starts}%)`} />
+        <Stat label="Shares" value={`${s.share_count} (${s.share_rate_of_completions}%/win)`} />
+      </div>
+      <Breakdown title="By difficulty" rows={s.by_difficulty} />
+      <Breakdown title="By mode" rows={s.by_mode} />
+      <Breakdown title="By device" rows={s.by_device} />
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border border-border/50 rounded px-3 py-2 bg-secondary/30">
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="text-foreground font-mono">{value}</div>
+    </div>
+  );
+}
+
+function Breakdown({ title, rows }: { title: string; rows: [string, number][] }) {
+  if (!rows.length) return null;
+  const total = rows.reduce((a, [, n]) => a + n, 0);
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{title}</div>
+      <div className="space-y-1">
+        {rows.map(([k, n]) => (
+          <div key={k} className="flex justify-between text-xs text-muted-foreground">
+            <span className="text-foreground">{k}</span>
+            <span className="font-mono">
+              {n} {total ? `(${Math.round((n / total) * 100)}%)` : ""}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
