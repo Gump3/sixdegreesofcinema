@@ -419,16 +419,29 @@ function GameScreen() {
   // Share helpers
   const [shareCopied, setShareCopied] = useState<null | "link" | "result">(null);
   async function copyText(text: string, kind: "link" | "result") {
+    let target: "native" | "clipboard" = "clipboard";
     try {
       if (navigator.share && kind === "result") {
-        await navigator.share({ text }).catch(async () => {
+        await navigator.share({ text }).then(() => { target = "native"; }).catch(async () => {
           await navigator.clipboard.writeText(text);
+          target = "clipboard";
         });
       } else {
         await navigator.clipboard.writeText(text);
       }
       setShareCopied(kind);
       setTimeout(() => setShareCopied(null), 1800);
+      if (game) {
+        track({
+          event_type: "share_used",
+          game_id: game.gameId,
+          difficulty: game.difficulty,
+          mode: game.mode,
+          is_daily: game.isDaily,
+          is_bacon: game.isBaconRound,
+          share_target: `${kind}:${target}`,
+        });
+      }
     } catch {
       // ignore
     }
