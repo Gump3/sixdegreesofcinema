@@ -25,6 +25,13 @@ export function PrivacyModal({ onClose }: { onClose: () => void }) {
             resulting chain, and your score — so we can validate solutions and surface shortest
             paths. It is not tied to any personal identifier.
           </p>
+          <p className="font-semibold text-foreground mt-3">Anonymous gameplay events</p>
+          <p>
+            We record anonymous gameplay events (puzzle started, completed, given up, share
+            actions, difficulty, mode, device type) using a random identifier generated and stored
+            on your device. This identifier is not linked to your name, email, IP address, or any
+            account, and it resets if you clear your browser's local storage.
+          </p>
           <p className="font-semibold text-foreground mt-3">Local preferences</p>
           <p>
             The display name you pick, your theme, and your stats/streak history are stored only

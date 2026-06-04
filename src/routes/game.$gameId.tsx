@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -32,6 +32,7 @@ import type { ChainStep } from "@/lib/types";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useStreak } from "@/hooks/use-streak";
 import { useStats } from "@/hooks/use-stats";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/game/$gameId")({
   component: GameScreen,
@@ -100,6 +101,7 @@ function GameScreen() {
   const [advancingStreak, setAdvancingStreak] = useState(false);
 
   const [game, setGame] = useState<GameData | null>(null);
+  const startedAtRef = useRef<number | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [chain, setChain] = useState<ChainStep[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -149,6 +151,15 @@ function GameScreen() {
         if (cancelled) return;
         setGame(g);
         setChain([{ kind: "person", id: g.actorA.id, name: g.actorA.name, image: g.actorA.image }]);
+        startedAtRef.current = Date.now();
+        track({
+          event_type: "puzzle_started",
+          game_id: g.gameId,
+          difficulty: g.difficulty,
+          mode: g.mode,
+          is_daily: g.isDaily,
+          is_bacon: g.isBaconRound,
+        });
       } catch (e) {
         if (!cancelled) setLoadErr(e instanceof Error ? e.message : "Failed to load game");
       }
@@ -224,6 +235,18 @@ function GameScreen() {
         }
         // Wordle-style local stats.
         stats.recordResult(gameId, true, res.degrees ?? undefined);
+        track({
+          event_type: "puzzle_completed",
+          game_id: gameId,
+          difficulty: game.difficulty,
+          mode: game.mode,
+          is_daily: game.isDaily,
+          is_bacon: game.isBaconRound,
+          solve_seconds: startedAtRef.current
+            ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
+            : 0,
+          degrees_used: res.degrees ?? degreesUsed,
+        });
 
 
         // Kick off alternates BFS separately so it doesn't block validation.
@@ -312,6 +335,18 @@ function GameScreen() {
       }
       // Wordle-style local stats — giving up counts as played + not solved.
       stats.recordResult(gameId, false);
+      track({
+        event_type: "puzzle_given_up",
+        game_id: gameId,
+        difficulty: game.difficulty,
+        mode: game.mode,
+        is_daily: game.isDaily,
+        is_bacon: game.isBaconRound,
+        solve_seconds: startedAtRef.current
+          ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
+          : undefined,
+        degrees_used: degreesUsed,
+      });
 
 
     } catch (e) {
@@ -384,16 +419,29 @@ function GameScreen() {
   // Share helpers
   const [shareCopied, setShareCopied] = useState<null | "link" | "result">(null);
   async function copyText(text: string, kind: "link" | "result") {
+    let target: "native" | "clipboard" = "clipboard";
     try {
       if (navigator.share && kind === "result") {
-        await navigator.share({ text }).catch(async () => {
+        await navigator.share({ text }).then(() => { target = "native"; }).catch(async () => {
           await navigator.clipboard.writeText(text);
+          target = "clipboard";
         });
       } else {
         await navigator.clipboard.writeText(text);
       }
       setShareCopied(kind);
       setTimeout(() => setShareCopied(null), 1800);
+      if (game) {
+        track({
+          event_type: "share_used",
+          game_id: game.gameId,
+          difficulty: game.difficulty,
+          mode: game.mode,
+          is_daily: game.isDaily,
+          is_bacon: game.isBaconRound,
+          share_target: `${kind}:${target}`,
+        });
+      }
     } catch {
       // ignore
     }
