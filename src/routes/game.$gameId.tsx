@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -101,6 +101,7 @@ function GameScreen() {
   const [advancingStreak, setAdvancingStreak] = useState(false);
 
   const [game, setGame] = useState<GameData | null>(null);
+  const startedAtRef = useRef<number | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [chain, setChain] = useState<ChainStep[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
