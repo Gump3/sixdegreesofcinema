@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_events: {
+        Row: {
+          anon_id: string
+          created_at: string
+          degrees_used: number | null
+          device: string | null
+          difficulty: string | null
+          event_type: string
+          game_id: string | null
+          id: number
+          is_bacon: boolean
+          is_daily: boolean
+          mode: string | null
+          share_target: string | null
+          solve_seconds: number | null
+        }
+        Insert: {
+          anon_id: string
+          created_at?: string
+          degrees_used?: number | null
+          device?: string | null
+          difficulty?: string | null
+          event_type: string
+          game_id?: string | null
+          id?: number
+          is_bacon?: boolean
+          is_daily?: boolean
+          mode?: string | null
+          share_target?: string | null
+          solve_seconds?: number | null
+        }
+        Update: {
+          anon_id?: string
+          created_at?: string
+          degrees_used?: number | null
+          device?: string | null
+          difficulty?: string | null
+          event_type?: string
+          game_id?: string | null
+          id?: number
+          is_bacon?: boolean
+          is_daily?: boolean
+          mode?: string | null
+          share_target?: string | null
+          solve_seconds?: number | null
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           actor_a: Json
