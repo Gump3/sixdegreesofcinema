@@ -150,6 +150,15 @@ function GameScreen() {
         if (cancelled) return;
         setGame(g);
         setChain([{ kind: "person", id: g.actorA.id, name: g.actorA.name, image: g.actorA.image }]);
+        startedAtRef.current = Date.now();
+        track({
+          event_type: "puzzle_started",
+          game_id: g.gameId,
+          difficulty: g.difficulty,
+          mode: g.mode,
+          is_daily: g.isDaily,
+          is_bacon: g.isBaconRound,
+        });
       } catch (e) {
         if (!cancelled) setLoadErr(e instanceof Error ? e.message : "Failed to load game");
       }
