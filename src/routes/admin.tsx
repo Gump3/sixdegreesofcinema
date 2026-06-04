@@ -146,9 +146,23 @@ function EngagementSection({ token }: { token: string }) {
   );
 }
 
-type Summary = Awaited<ReturnType<typeof getAnalyticsSummary>> extends { last_7_days: infer S }
-  ? S
-  : never;
+type Summary = {
+  starts: number;
+  completions: number;
+  giveups: number;
+  completion_rate: number;
+  giveup_rate: number;
+  avg_solve_seconds: number;
+  avg_degrees_used: number;
+  by_difficulty: [string, number][];
+  by_mode: [string, number][];
+  by_device: [string, number][];
+  unique_players: number;
+  daily_challenge_starts: number;
+  daily_share_of_starts: number;
+  share_count: number;
+  share_rate_of_completions: number;
+};
 
 function WindowCard({ title, s }: { title: string; s: Summary }) {
   return (
