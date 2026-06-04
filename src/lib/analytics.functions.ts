@@ -3,6 +3,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { hasConfiguredAdminToken, isValidAdminToken } from "@/lib/admin-token";
 
 const eventSchema = z.object({
   event_type: z.enum(["puzzle_started", "puzzle_completed", "puzzle_given_up", "share_used"]),
@@ -115,9 +116,8 @@ function summarize(rows: Row[]) {
 export const getAnalyticsSummary = createServerFn({ method: "POST" })
   .inputValidator((input) => summarySchema.parse(input))
   .handler(async ({ data }) => {
-    const expected = process.env.ADMIN_TOKEN;
-    if (!expected) return { configured: false as const };
-    if (data.token !== expected) throw new Error("Unauthorized");
+    if (!hasConfiguredAdminToken()) return { configured: false as const };
+    if (!(await isValidAdminToken(data.token))) throw new Error("Unauthorized");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

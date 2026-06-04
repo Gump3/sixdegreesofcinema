@@ -6,16 +6,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
+import { hasConfiguredAdminToken, isValidAdminToken } from "@/lib/admin-token";
 import { getAnalyticsSummary } from "@/lib/analytics.functions";
 
 const getAdminMetrics = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: z.string().min(1) }).parse(input))
   .handler(async ({ data }) => {
-    const expected = process.env.ADMIN_TOKEN;
-    if (!expected) {
+    if (!hasConfiguredAdminToken()) {
       return { configured: false as const };
     }
-    if (data.token !== expected) {
+    if (!(await isValidAdminToken(data.token))) {
       throw new Error("Unauthorized");
     }
 
