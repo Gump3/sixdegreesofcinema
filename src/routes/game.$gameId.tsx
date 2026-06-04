@@ -235,6 +235,18 @@ function GameScreen() {
         }
         // Wordle-style local stats.
         stats.recordResult(gameId, true, res.degrees ?? undefined);
+        track({
+          event_type: "puzzle_completed",
+          game_id: gameId,
+          difficulty: game.difficulty,
+          mode: game.mode,
+          is_daily: game.isDaily,
+          is_bacon: game.isBaconRound,
+          solve_seconds: startedAtRef.current
+            ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
+            : 0,
+          degrees_used: res.degrees ?? degreesUsed,
+        });
 
 
         // Kick off alternates BFS separately so it doesn't block validation.
@@ -323,6 +335,18 @@ function GameScreen() {
       }
       // Wordle-style local stats — giving up counts as played + not solved.
       stats.recordResult(gameId, false);
+      track({
+        event_type: "puzzle_given_up",
+        game_id: gameId,
+        difficulty: game.difficulty,
+        mode: game.mode,
+        is_daily: game.isDaily,
+        is_bacon: game.isBaconRound,
+        solve_seconds: startedAtRef.current
+          ? Math.max(0, Math.round((Date.now() - startedAtRef.current) / 1000))
+          : undefined,
+        degrees_used: degreesUsed,
+      });
 
 
     } catch (e) {
