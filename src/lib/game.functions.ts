@@ -47,6 +47,22 @@ const GENERATION_RANGES: Record<string, [number, number] | null> = {
   all: null,
 };
 
+// "Bleed" ranges from the adjacent era(s). Endpoints from these years are
+// allowed into the pool with a reduced weight so the primary era still
+// dominates picks (~70%) but the candidate pool is meaningfully larger.
+// This is especially important for Boomer + Easy where the strict era +
+// notable-credits filters otherwise collapse to a few dozen people and
+// the same pair keeps recurring.
+const GENERATION_BLEED_RANGES: Record<string, [number, number] | null> = {
+  boomer: [1985, 2000],      // bleed forward into early Gen X
+  genx: [1970, 1977],        // small bleed back into late Boomer
+  millennial: [2016, 2020],  // bleed forward into Gen Z
+  genz: [2003, 2007],        // bleed back into late Millennial
+  all: null,
+};
+// Weight multiplier applied to bleed-only actors. ~0.4 → expected share ≈30%.
+const BLEED_WEIGHT = 0.4;
+
 // Kevin Bacon — TMDB person id. Used for "Bacon Round" surprise pairs.
 const KEVIN_BACON_TMDB_ID = 4724;
 const BACON_ROUND_PROBABILITY = 0.05; // ~5% of new (non-daily) games
@@ -110,6 +126,29 @@ export const createGame = createServerFn({ method: "POST" })
         // ignore page errors
       }
     }
+
+    // Bleed pool: actors whose known_for falls in the adjacent era. These get
+    // mixed in at reduced weight to expand the candidate set (esp. Boomer/Easy).
+    const bleedRange = GENERATION_BLEED_RANGES[generation] ?? null;
+    const bleedIds = new Set<number>();
+    if (bleedRange) {
+      const primaryIds = new Set(pool.map((p) => p.id));
+      for (const page of basePages) {
+        try {
+          const r = await getPopularPeoplePage(page, { eraRange: bleedRange, minKnownForVotes });
+          for (const p of r) {
+            if (p.known_for_department !== "Acting") continue;
+            if (primaryIds.has(p.id)) continue;
+            if (bleedIds.has(p.id)) continue;
+            bleedIds.add(p.id);
+            pool.push(p);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     // Fallback: if the era/Gen Z filter starved the pool, retry without those filters.
     if (pool.length < 2 && (eraRange || minKnownForVotes > 0)) {
       for (const page of basePages) {
@@ -126,7 +165,7 @@ export const createGame = createServerFn({ method: "POST" })
     }
 
 
-    // Deduplicate by id
+    // Deduplicate by id (keep first occurrence — primary wins over bleed).
     const seen = new Set<number>();
     const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
 
@@ -149,6 +188,7 @@ export const createGame = createServerFn({ method: "POST" })
       const f = freq[String(p.id)] ?? 0;
       let w = 1 / (1 + f); // hub downweight
       if (suppressSet.has(p.id)) w *= 0.3; // soft cooldown
+      if (bleedIds.has(p.id)) w *= BLEED_WEIGHT; // adjacent-era bleed actors
       return w;
     };
     const weights = candidates.map(weightOf);
