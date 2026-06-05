@@ -48,6 +48,7 @@ const engagementQueryOptions = (token: string) =>
 const adminSearchSchema = z.object({ token: z.string().optional() });
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   validateSearch: adminSearchSchema,
   component: AdminPage,
   errorComponent: ({ error }) => (
