@@ -3,11 +3,12 @@
 // Usage: /admin?token=<ADMIN_TOKEN>
 
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { createServerFn, useServerFn } from "@tanstack/react-start";
+import { useSuspenseQuery, queryOptions, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { z } from "zod";
 import { hasConfiguredAdminToken, isValidAdminToken } from "@/lib/admin-token";
-import { getAnalyticsSummary } from "@/lib/analytics.functions";
+import { getAnalyticsSummary, resetAnalytics } from "@/lib/analytics.functions";
 
 const getAdminMetrics = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: z.string().min(1) }).parse(input))
