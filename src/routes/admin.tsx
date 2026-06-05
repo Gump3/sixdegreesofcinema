@@ -3,11 +3,12 @@
 // Usage: /admin?token=<ADMIN_TOKEN>
 
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { createServerFn, useServerFn } from "@tanstack/react-start";
+import { useSuspenseQuery, queryOptions, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { z } from "zod";
 import { hasConfiguredAdminToken, isValidAdminToken } from "@/lib/admin-token";
-import { getAnalyticsSummary } from "@/lib/analytics.functions";
+import { getAnalyticsSummary, resetAnalytics } from "@/lib/analytics.functions";
 
 const getAdminMetrics = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: z.string().min(1) }).parse(input))
@@ -135,10 +136,68 @@ function AdminInner({ token }: { token: string }) {
 
 function EngagementSection({ token }: { token: string }) {
   const { data } = useSuspenseQuery(engagementQueryOptions(token));
+  const qc = useQueryClient();
+  const resetFn = useServerFn(resetAnalytics);
+  const [scope, setScope] = useState<"last_hour" | "last_2_hours" | "last_day" | "all">("last_2_hours");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
   if (!data.configured) return null;
+
+  const recent = data.recent_window;
+  const showHint = recent && recent.starts >= 5;
+
+  async function handleReset() {
+    const label =
+      scope === "all" ? "ALL analytics events" : `events from the ${scope.replace("_", " ")}`;
+    if (!confirm(`Delete ${label}? This cannot be undone.`)) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await resetFn({ data: { token, scope } });
+      setMsg(r.configured ? `Deleted ${r.deleted} event${r.deleted === 1 ? "" : "s"}.` : "Not configured.");
+      await qc.invalidateQueries({ queryKey: ["admin-engagement", token] });
+      await qc.invalidateQueries({ queryKey: ["admin-metrics", token] });
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Reset failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section>
-      <h2 className="text-2xl text-gold-bright font-display mb-4">Gameplay engagement</h2>
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+        <h2 className="text-2xl text-gold-bright font-display">Gameplay engagement</h2>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">
+            Last 2h: {recent?.starts ?? 0} starts / {recent?.total ?? 0} events
+          </span>
+          <select
+            value={scope}
+            onChange={(e) => setScope(e.target.value as typeof scope)}
+            className="bg-input border border-border rounded px-2 py-1 text-foreground"
+          >
+            <option value="last_hour">Last 1h</option>
+            <option value="last_2_hours">Last 2h</option>
+            <option value="last_day">Last 24h</option>
+            <option value="all">All time</option>
+          </select>
+          <button
+            onClick={handleReset}
+            disabled={busy}
+            className="border border-gold/50 text-gold-bright hover:bg-gold/10 rounded px-3 py-1 disabled:opacity-50"
+          >
+            {busy ? "Resetting…" : "Reset analytics"}
+          </button>
+        </div>
+      </div>
+      {showHint && !msg && (
+        <p className="text-xs text-gold mb-3">
+          Looks like a testing burst ({recent.starts} starts in 2h). Use “Reset analytics” to clear it.
+        </p>
+      )}
+      {msg && <p className="text-xs text-muted-foreground mb-3">{msg}</p>}
       <div className="grid md:grid-cols-2 gap-6">
         <WindowCard title="Last 7 days" s={data.last_7_days} />
         <WindowCard title="Last 30 days" s={data.last_30_days} />
