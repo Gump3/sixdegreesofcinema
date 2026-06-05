@@ -213,9 +213,20 @@ export const createGame = createServerFn({ method: "POST" })
     }
 
     if (!actorA || !actorB) {
-      // Fallback: pick first two distinct (ignore pair-block as a last resort).
-      actorA = candidates[0] ?? null;
-      actorB = candidates.find((p) => p && actorA && p.id !== actorA.id) ?? null;
+      // Fallback: weighted random pick ignoring pair-block, so a small
+      // candidate pool (e.g. Boomer + Easy after era + min-credits filters)
+      // doesn't keep returning the same deterministic candidates[0/1] pair.
+      const a = pickWeighted();
+      const b = a ? pickWeighted(a.id) : null;
+      if (a && b && a.id !== b.id) {
+        actorA = a;
+        actorB = b;
+      } else {
+        // Last resort: shuffle and take two distinct.
+        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+        actorA = shuffled[0] ?? null;
+        actorB = shuffled.find((p) => p && actorA && p.id !== actorA.id) ?? null;
+      }
     }
 
     if (!actorA || !actorB) {
