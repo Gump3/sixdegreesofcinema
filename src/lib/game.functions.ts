@@ -47,6 +47,22 @@ const GENERATION_RANGES: Record<string, [number, number] | null> = {
   all: null,
 };
 
+// "Bleed" ranges from the adjacent era(s). Endpoints from these years are
+// allowed into the pool with a reduced weight so the primary era still
+// dominates picks (~70%) but the candidate pool is meaningfully larger.
+// This is especially important for Boomer + Easy where the strict era +
+// notable-credits filters otherwise collapse to a few dozen people and
+// the same pair keeps recurring.
+const GENERATION_BLEED_RANGES: Record<string, [number, number] | null> = {
+  boomer: [1985, 2000],      // bleed forward into early Gen X
+  genx: [1970, 1977],        // small bleed back into late Boomer
+  millennial: [2016, 2020],  // bleed forward into Gen Z
+  genz: [2003, 2007],        // bleed back into late Millennial
+  all: null,
+};
+// Weight multiplier applied to bleed-only actors. ~0.4 → expected share ≈30%.
+const BLEED_WEIGHT = 0.4;
+
 // Kevin Bacon — TMDB person id. Used for "Bacon Round" surprise pairs.
 const KEVIN_BACON_TMDB_ID = 4724;
 const BACON_ROUND_PROBABILITY = 0.05; // ~5% of new (non-daily) games
