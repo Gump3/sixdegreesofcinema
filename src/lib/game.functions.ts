@@ -188,6 +188,7 @@ export const createGame = createServerFn({ method: "POST" })
       const f = freq[String(p.id)] ?? 0;
       let w = 1 / (1 + f); // hub downweight
       if (suppressSet.has(p.id)) w *= 0.3; // soft cooldown
+      if (bleedIds.has(p.id)) w *= BLEED_WEIGHT; // adjacent-era bleed actors
       return w;
     };
     const weights = candidates.map(weightOf);
