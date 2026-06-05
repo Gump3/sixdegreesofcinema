@@ -126,6 +126,29 @@ export const createGame = createServerFn({ method: "POST" })
         // ignore page errors
       }
     }
+
+    // Bleed pool: actors whose known_for falls in the adjacent era. These get
+    // mixed in at reduced weight to expand the candidate set (esp. Boomer/Easy).
+    const bleedRange = GENERATION_BLEED_RANGES[generation] ?? null;
+    const bleedIds = new Set<number>();
+    if (bleedRange) {
+      const primaryIds = new Set(pool.map((p) => p.id));
+      for (const page of basePages) {
+        try {
+          const r = await getPopularPeoplePage(page, { eraRange: bleedRange, minKnownForVotes });
+          for (const p of r) {
+            if (p.known_for_department !== "Acting") continue;
+            if (primaryIds.has(p.id)) continue;
+            if (bleedIds.has(p.id)) continue;
+            bleedIds.add(p.id);
+            pool.push(p);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     // Fallback: if the era/Gen Z filter starved the pool, retry without those filters.
     if (pool.length < 2 && (eraRange || minKnownForVotes > 0)) {
       for (const page of basePages) {
@@ -142,7 +165,7 @@ export const createGame = createServerFn({ method: "POST" })
     }
 
 
-    // Deduplicate by id
+    // Deduplicate by id (keep first occurrence — primary wins over bleed).
     const seen = new Set<number>();
     const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
 
