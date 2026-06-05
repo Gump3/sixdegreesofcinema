@@ -133,5 +133,60 @@ export const getAnalyticsSummary = createServerFn({ method: "POST" })
     };
 
     const [d7, d30] = await Promise.all([fetchWindow(7), fetchWindow(30)]);
-    return { configured: true as const, last_7_days: d7, last_30_days: d30 };
+
+    // Recent-activity probe: count events in the last 2h so the UI can suggest
+    // a reset when the admin has clearly been testing (>= 5 starts in 2h).
+    const since2h = new Date(Date.now() - 2 * 3600_000).toISOString();
+    const { data: recent } = await (supabaseAdmin as any)
+      .from("game_events")
+      .select("event_type, created_at")
+      .gte("created_at", since2h)
+      .limit(5000);
+    const recentRows = (recent ?? []) as { event_type: string; created_at: string }[];
+    const recent_window = {
+      total: recentRows.length,
+      starts: recentRows.filter((r) => r.event_type === "puzzle_started").length,
+    };
+
+    return { configured: true as const, last_7_days: d7, last_30_days: d30, recent_window };
+  });
+
+const resetSchema = z.object({
+  token: z.string().min(1),
+  scope: z.enum(["last_hour", "last_2_hours", "last_day", "all"]),
+});
+
+/**
+ * Admin-only wipe of recent analytics events. Used when the dev/owner has
+ * been smoke-testing the live app and wants to clear the resulting noise
+ * from the engagement window. Service-role only; gated by ADMIN_TOKEN.
+ */
+export const resetAnalytics = createServerFn({ method: "POST" })
+  .inputValidator((input) => resetSchema.parse(input))
+  .handler(async ({ data }) => {
+    if (!hasConfiguredAdminToken()) return { configured: false as const };
+    if (!(await isValidAdminToken(data.token))) throw new Error("Unauthorized");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const cutoffMs =
+      data.scope === "last_hour"
+        ? 3600_000
+        : data.scope === "last_2_hours"
+          ? 2 * 3600_000
+          : data.scope === "last_day"
+            ? 24 * 3600_000
+            : null;
+
+    let q = (supabaseAdmin as any).from("game_events").delete();
+    if (cutoffMs !== null) {
+      const since = new Date(Date.now() - cutoffMs).toISOString();
+      q = q.gte("created_at", since);
+    } else {
+      // delete-all requires a where clause in PostgREST; use a tautology.
+      q = q.gte("created_at", "1970-01-01");
+    }
+    const { error, count } = await q.select("id", { count: "exact", head: true });
+    if (error) throw new Error(error.message);
+    return { configured: true as const, deleted: count ?? 0 };
   });
