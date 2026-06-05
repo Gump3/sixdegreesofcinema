@@ -186,7 +186,7 @@ export const resetAnalytics = createServerFn({ method: "POST" })
       // delete-all requires a where clause in PostgREST; use a tautology.
       q = q.gte("created_at", "1970-01-01");
     }
-    const { error, count } = await q.select("id", { count: "exact", head: true });
+    const { data: deletedRows, error } = await q.select("id");
     if (error) throw new Error(error.message);
-    return { configured: true as const, deleted: count ?? 0 };
+    return { configured: true as const, deleted: deletedRows?.length ?? 0 };
   });
