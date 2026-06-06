@@ -11,6 +11,7 @@ import {
   getSuppressActorIds,
   getActorFrequency,
   getRecentPairs,
+  getRecentEndpointIds,
   rememberEndpointPair,
 } from "@/lib/recent-actors";
 import { Footer } from "@/components/Footer";
@@ -84,6 +85,7 @@ function HomePage() {
         suppressIds: getSuppressActorIds(),
         frequency: Object.fromEntries(Object.entries(getActorFrequency()).map(([k, v]) => [k, v])),
         excludePairs: getRecentPairs(),
+        recentEndpointIds: getRecentEndpointIds(),
       } });
       rememberEndpointPair(res.actorA?.id, res.actorB?.id);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
@@ -132,6 +134,7 @@ function HomePage() {
         suppressIds: getSuppressActorIds(),
         frequency: getActorFrequency(),
         excludePairs: getRecentPairs(),
+        recentEndpointIds: getRecentEndpointIds(),
       } });
       rememberEndpointPair(res.actorA?.id, res.actorB?.id);
       streak.start(res.gameId, settings);

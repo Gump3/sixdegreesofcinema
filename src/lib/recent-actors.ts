@@ -16,6 +16,8 @@ const KEY_PAIRS = "sdh:recentPairs";
 const HARD_EXCLUDE_CAP = 30;
 const RECENT_CAP = 100;
 const PAIR_CAP = 50;
+/** Strict single-actor cooldown: neither endpoint may be in the last N. */
+const RECENT_ENDPOINT_CAP = 12; // ~6 games × 2 endpoints
 
 function readArr<T>(key: string, guard: (v: unknown) => v is T): T[] {
   if (typeof window === "undefined") return [];
@@ -36,6 +38,11 @@ function readRecent(): number[] {
 /** Hard-exclude list: most recent N actor IDs. Backwards-compatible name. */
 export function getRecentActorIds(): number[] {
   return readRecent().slice(0, HARD_EXCLUDE_CAP);
+}
+
+/** Strict cooldown: actor IDs from the last ~6 games (both endpoints). */
+export function getRecentEndpointIds(): number[] {
+  return readRecent().slice(0, RECENT_ENDPOINT_CAP);
 }
 
 /** Soft-suppress list: older entries in the recent window (not in the hard cut). */
