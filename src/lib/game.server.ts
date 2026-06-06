@@ -330,7 +330,7 @@ function mulberry32(seed: number) {
   };
 }
 
-export const getDailyChallenge = createServerFn({ method: "POST" }).handler(async () => {
+export async function getDailyChallenge() {
   // Use UTC date so everyone shares the same daily.
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
@@ -412,12 +412,10 @@ export const getDailyChallenge = createServerFn({ method: "POST" }).handler(asyn
     difficulty: "medium" as const,
     date: today,
   };
-});
+}
 
 // ============== loadGame ==============
-export const loadGame = createServerFn({ method: "GET" })
-  .inputValidator((input) => z.object({ gameId: z.string().uuid() }).parse(input))
-  .handler(async ({ data }) => {
+export async function loadGame({ data }: { data: { gameId: string } }) {
     const { data: row, error } = await supabaseAdmin
       .from("games")
       .select("id, actor_a, actor_b, mode, difficulty, is_daily, daily_date, is_bacon_round")
@@ -434,20 +432,16 @@ export const loadGame = createServerFn({ method: "GET" })
       dailyDate: (row.daily_date as string | null) ?? null,
       isBaconRound: Boolean(row.is_bacon_round),
     };
-  });
+}
 
 // ============== searchPeopleFn (autocomplete) ==============
-export const searchPeopleFn = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ query: z.string().min(1).max(100) }).parse(input))
-  .handler(async ({ data }) => {
+export async function searchPeopleFn({ data }: { data: { query: string } }) {
     const results = await searchPeople(data.query);
     return results.map(personDto);
-  });
+}
 
 // ============== getPersonMoviesFn (eligible movies for a given person) ==============
-export const getPersonMoviesFn = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ personId: z.number().int().positive() }).parse(input))
-  .handler(async ({ data }) => {
+export async function getPersonMoviesFn({ data }: { data: { personId: number } }) {
     const credits = await getPersonCredits(data.personId);
     const mark = (movies: Movie[], role: "acted" | "directed") =>
       movies.map((m) => ({ ...movieDto(m), role }));
@@ -467,7 +461,7 @@ export const getPersonMoviesFn = createServerFn({ method: "POST" })
       if (out.length >= CAP) break;
     }
     return out;
-  });
+}
 
 // ============== getMoviePeopleFn ==============
 export const getMoviePeopleFn = createServerFn({ method: "POST" })
