@@ -456,17 +456,22 @@ export const getPersonMoviesFn = createServerFn({ method: "POST" })
     const credits = await getPersonCredits(data.personId);
     const mark = (movies: Movie[], role: "acted" | "directed") =>
       movies.map((m) => ({ ...movieDto(m), role }));
-    const all = [...mark(credits.acting, "acted"), ...mark(credits.directing, "directed")];
-    // Dedupe (same movie, prefer 'acted' first appearance)
+    // Prioritize directing credits so a director's filmography (e.g. Spielberg's
+    // Amistad) is never displaced by long lists of "as himself" acting credits
+    // from documentaries/interviews. Always include all directing credits first,
+    // then fill the rest with acting credits up to the cap.
+    const CAP = 120;
+    const directed = mark(credits.directing, "directed");
+    const acted = mark(credits.acting, "acted");
     const seen = new Set<number>();
     const out: ReturnType<typeof mark>[number][] = [];
-    for (const m of all) {
+    for (const m of [...directed, ...acted]) {
       if (seen.has(m.id)) continue;
       seen.add(m.id);
       out.push(m);
+      if (out.length >= CAP) break;
     }
-    // Keep top 60 by popularity (already sorted within each list, re-sort union loosely)
-    return out.slice(0, 80);
+    return out;
   });
 
 // ============== getMoviePeopleFn ==============
