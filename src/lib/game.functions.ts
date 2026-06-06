@@ -15,6 +15,7 @@ const createGameSchema = z.object({
   suppressIds: z.array(z.number().int()).max(200).optional(),
   frequency: z.record(z.string(), z.number().int().nonnegative()).optional(),
   excludePairs: z.array(z.string().max(40)).max(60).optional(),
+  recentEndpointIds: z.array(z.number().int()).max(40).optional(),
 });
 
 const chainStepSchema = z.discriminatedUnion("kind", [
