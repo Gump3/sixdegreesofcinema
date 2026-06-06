@@ -370,13 +370,14 @@ function GameScreen() {
         const raw = window.localStorage.getItem("sdh:generation");
         if (raw) generation = JSON.parse(raw);
       } catch { /* ignore */ }
-      const { getRecentActorIds, getSuppressActorIds, getActorFrequency, getRecentPairs, rememberEndpointPair } = await import("@/lib/recent-actors");
+      const { getRecentActorIds, getSuppressActorIds, getActorFrequency, getRecentPairs, getRecentEndpointIds, rememberEndpointPair } = await import("@/lib/recent-actors");
       const res = await createGameFn({ data: {
         mode: game.mode, difficulty: game.difficulty, generation,
         excludeIds: getRecentActorIds(),
         suppressIds: getSuppressActorIds(),
         frequency: getActorFrequency(),
         excludePairs: getRecentPairs(),
+        recentEndpointIds: getRecentEndpointIds(),
       } });
       rememberEndpointPair(res.actorA?.id, res.actorB?.id);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
