@@ -85,6 +85,7 @@ function HomePage() {
         suppressIds: getSuppressActorIds(),
         frequency: Object.fromEntries(Object.entries(getActorFrequency()).map(([k, v]) => [k, v])),
         excludePairs: getRecentPairs(),
+        recentEndpointIds: getRecentEndpointIds(),
       } });
       rememberEndpointPair(res.actorA?.id, res.actorB?.id);
       navigate({ to: "/game/$gameId", params: { gameId: res.gameId } });
