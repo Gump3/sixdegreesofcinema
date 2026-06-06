@@ -730,9 +730,7 @@ export async function getHint({ data }: { data: z.infer<typeof getHintInputSchem
 }
 
 // ============== giveUp ==============
-export const giveUp = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ gameId: z.string().uuid() }).parse(input))
-  .handler(async ({ data }) => {
+export async function giveUp({ data }: { data: { gameId: string } }) {
     const game = await supabaseAdmin
       .from("games")
       .select("actor_a, actor_b, shortest_path, alternates")
@@ -761,17 +759,15 @@ export const giveUp = createServerFn({ method: "POST" })
       degrees: shortest ? shortest.filter((s) => s.kind === "movie").length : null,
       debug: readDebugCounters(),
     };
-  });
+}
 
 // ============== getDebug (read counters) ==============
 // ============== searchMoviesFn (TMDB title search; used for greyed-out hints) ==============
-export const searchMoviesFn = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ query: z.string().min(1).max(100) }).parse(input))
-  .handler(async ({ data }) => {
+export async function searchMoviesFn({ data }: { data: { query: string } }) {
     const results = await searchMovies(data.query);
     return results.map(movieDto);
-  });
+}
 
-export const getDebugStats = createServerFn({ method: "GET" }).handler(async () => {
+export async function getDebugStats() {
   return readDebugCounters();
-});
+}
