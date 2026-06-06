@@ -94,6 +94,7 @@ const createGameInputSchema = z.object({
   suppressIds: z.array(z.number().int()).max(200).optional(),
   frequency: z.record(z.string(), z.number().int().nonnegative()).optional(),
   excludePairs: z.array(z.string().max(40)).max(60).optional(),
+  recentEndpointIds: z.array(z.number().int()).max(40).optional(),
 });
 
 export async function createGame({ data }: { data: z.infer<typeof createGameInputSchema> }) {
