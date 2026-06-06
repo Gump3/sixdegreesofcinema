@@ -464,9 +464,7 @@ export async function getPersonMoviesFn({ data }: { data: { personId: number } }
 }
 
 // ============== getMoviePeopleFn ==============
-export const getMoviePeopleFn = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ movieId: z.number().int().positive() }).parse(input))
-  .handler(async ({ data }) => {
+export async function getMoviePeopleFn({ data }: { data: { movieId: number } }) {
     const credits = await getMovieCredits(data.movieId);
     // Top 5 billed always shown; below that, require notability so the picker
     // doesn't surface obscure supporting actors no one would recognize.
@@ -487,7 +485,7 @@ export const getMoviePeopleFn = createServerFn({ method: "POST" })
       out.push(p);
     }
     return out;
-  });
+}
 
 // ============== validateChain ==============
 const chainStepSchema = z.discriminatedUnion("kind", [
@@ -501,18 +499,14 @@ const chainStepSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-export const validateChain = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
-    z
-      .object({
-        gameId: z.string().uuid(),
-        chain: z.array(chainStepSchema).min(1).max(15),
-        hintsUsed: z.number().int().min(0).max(20).default(0),
-        invalidAttempts: z.number().int().min(0).max(100).default(0),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
+const validateChainInputSchema = z.object({
+  gameId: z.string().uuid(),
+  chain: z.array(chainStepSchema).min(1).max(15),
+  hintsUsed: z.number().int().min(0).max(20).default(0),
+  invalidAttempts: z.number().int().min(0).max(100).default(0),
+});
+
+export async function validateChain({ data }: { data: z.infer<typeof validateChainInputSchema> }) {
     const game = await supabaseAdmin
       .from("games")
       .select("actor_a, actor_b, difficulty, mode, shortest_path, alternates, is_bacon_round")
@@ -629,7 +623,7 @@ export const validateChain = createServerFn({ method: "POST" })
       alternatesPending: !shortest,
       debug: readDebugCounters(),
     };
-  });
+}
 
 // ============== getAlternatesFn ==============
 // Heavy BFS lives behind its own endpoint so the validate call returns instantly.
