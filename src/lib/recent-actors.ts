@@ -16,6 +16,8 @@ const KEY_PAIRS = "sdh:recentPairs";
 const HARD_EXCLUDE_CAP = 30;
 const RECENT_CAP = 100;
 const PAIR_CAP = 50;
+/** Strict single-actor cooldown: neither endpoint may be in the last N. */
+const RECENT_ENDPOINT_CAP = 12; // ~6 games × 2 endpoints
 
 function readArr<T>(key: string, guard: (v: unknown) => v is T): T[] {
   if (typeof window === "undefined") return [];
