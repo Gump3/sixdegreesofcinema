@@ -98,17 +98,15 @@ const createGameInputSchema = z.object({
 });
 
 export async function createGame({ data }: { data: z.infer<typeof createGameInputSchema> }) {
-    const { mode, difficulty, generation, excludeIds, suppressIds, frequency, excludePairs } = data;
+    const { mode, difficulty, generation, excludeIds, suppressIds, frequency, excludePairs, recentEndpointIds } = data;
     const eraRange = GENERATION_RANGES[generation] ?? null;
 
     // Deeper popularity sweep — same TMDB cost per page (cached), much wider pool.
-    // Easy ~80–100 unique actors, Hard ~150+. Era filter widens further to survive culling.
-    const basePages =
-      difficulty === "hard"
-        ? [1, 2, 3, 4, 5, 6, 7, 8]
-        : difficulty === "medium"
-          ? [1, 2, 3, 4, 5, 6]
-          : [1, 2, 3, 4];
+    // Boomer goes deepest because the era pool is genuinely small after filters.
+    const baseDepth =
+      difficulty === "hard" ? 8 : difficulty === "medium" ? 6 : 4;
+    const boomerBoost = generation === "boomer" ? 4 : 0;
+    const basePages = Array.from({ length: baseDepth + boomerBoost }, (_, i) => i + 1);
     const pages = eraRange
       ? [...basePages, basePages[basePages.length - 1] + 1, basePages[basePages.length - 1] + 2, basePages[basePages.length - 1] + 3]
       : basePages;
@@ -146,6 +144,7 @@ export async function createGame({ data }: { data: z.infer<typeof createGameInpu
         }
       }
     }
+    const bleedWeight = generation === "boomer" ? BLEED_WEIGHT_BOOMER : BLEED_WEIGHT_DEFAULT;
 
     // Fallback: if the era/Gen Z filter starved the pool, retry without those filters.
     if (pool.length < 2 && (eraRange || minKnownForVotes > 0)) {
@@ -167,16 +166,25 @@ export async function createGame({ data }: { data: z.infer<typeof createGameInpu
     const seen = new Set<number>();
     const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
 
-    // Hard-exclude recently-shown actors when the pool can spare them.
+    // Two-tier hard-exclude:
+    //   - recentEndpointIds (last ~6 games): NEVER allow these — strict cooldown
+    //   - excludeIds (older window of ~30): preferred to exclude, drop if pool too thin
+    const strictBlock = new Set(recentEndpointIds ?? []);
     const excludeSet = new Set(excludeIds ?? []);
-    const filteredForVariety = excludeSet.size
-      ? unique.filter((p) => !excludeSet.has(p.id))
+    const strictFiltered = strictBlock.size
+      ? unique.filter((p) => !strictBlock.has(p.id))
       : unique;
-    const candidates = filteredForVariety.length >= 8 ? filteredForVariety : unique;
+    // If strict block alone leaves <2, we have no choice — relax it.
+    const afterStrict = strictFiltered.length >= 2 ? strictFiltered : unique;
+    const filteredForVariety = excludeSet.size
+      ? afterStrict.filter((p) => !excludeSet.has(p.id))
+      : afterStrict;
+    // Lowered threshold (8 → 4): keep older exclusions in effect even when pool is tight.
+    const candidates = filteredForVariety.length >= 4 ? filteredForVariety : afterStrict;
 
     // ===== Weighted sampling =====
     // Penalize: (1) actors seen anywhere in the recent window (soft suppression),
-    //           (2) hub actors who appeared often as endpoints (frequency penalty).
+    //           (2) hub actors who appeared often as endpoints (frequency penalty, squared).
     const suppressSet = new Set(suppressIds ?? []);
     const freq = frequency ?? {};
     const pairBlock = new Set(excludePairs ?? []);
@@ -184,40 +192,49 @@ export async function createGame({ data }: { data: z.infer<typeof createGameInpu
 
     const weightOf = (p: Person) => {
       const f = freq[String(p.id)] ?? 0;
-      let w = 1 / (1 + f); // hub downweight
+      let w = 1 / Math.pow(1 + f, 2); // hub downweight, squared
       if (suppressSet.has(p.id)) w *= 0.3; // soft cooldown
-      if (bleedIds.has(p.id)) w *= BLEED_WEIGHT; // adjacent-era bleed actors
+      if (bleedIds.has(p.id)) w *= bleedWeight; // adjacent-era bleed actors
       return w;
     };
     const weights = candidates.map(weightOf);
-    const pickWeighted = (excludeId?: number): Person | null => {
+    // Stratified: 80% of the time, pick actor A from the "fresh" bucket
+    // (not in the wider recent suppress window). Falls back to full pool.
+    const freshIdx: number[] = [];
+    for (let i = 0; i < candidates.length; i++) {
+      if (!suppressSet.has(candidates[i].id) && !excludeSet.has(candidates[i].id)) {
+        freshIdx.push(i);
+      }
+    }
+    const pickWeighted = (excludeId?: number, fresh = false): Person | null => {
+      const indices = fresh && freshIdx.length >= 2 ? freshIdx : candidates.map((_, i) => i);
       let total = 0;
-      for (let i = 0; i < candidates.length; i++) {
+      for (const i of indices) {
         if (excludeId !== undefined && candidates[i].id === excludeId) continue;
         total += weights[i];
       }
       if (total <= 0) return null;
       let r = Math.random() * total;
-      for (let i = 0; i < candidates.length; i++) {
+      for (const i of indices) {
         if (excludeId !== undefined && candidates[i].id === excludeId) continue;
         r -= weights[i];
         if (r <= 0) return candidates[i];
       }
-      return candidates[candidates.length - 1] ?? null;
+      return candidates[indices[indices.length - 1]] ?? null;
     };
 
     let actorA: Person | null = null;
     let actorB: Person | null = null;
 
     // Easy/Medium: require endpoints to have a meaningful filmography so casual
-    // players aren't asked to connect relative unknowns. (counts use our notable-
-    // movie filter from getPersonCredits, not raw TMDB totals.)
+    // players aren't asked to connect relative unknowns. Medium relaxed 5 → 4.
     const minNotableCredits =
-      difficulty === "easy" ? 8 : difficulty === "medium" ? 5 : 0;
+      difficulty === "easy" ? 8 : difficulty === "medium" ? 4 : 0;
 
     for (let attempt = 0; attempt < 30; attempt++) {
-      const a = pickWeighted();
-      const b = a ? pickWeighted(a.id) : null;
+      const useFresh = Math.random() < 0.8;
+      const a = pickWeighted(undefined, useFresh);
+      const b = a ? pickWeighted(a.id, useFresh) : null;
       if (!a || !b || a.id === b.id) continue;
 
       // Avoid exact-pair reuse from recent history.
