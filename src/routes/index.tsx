@@ -134,6 +134,7 @@ function HomePage() {
         suppressIds: getSuppressActorIds(),
         frequency: getActorFrequency(),
         excludePairs: getRecentPairs(),
+        recentEndpointIds: getRecentEndpointIds(),
       } });
       rememberEndpointPair(res.actorA?.id, res.actorB?.id);
       streak.start(res.gameId, settings);
