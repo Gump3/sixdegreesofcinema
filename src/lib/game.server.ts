@@ -59,8 +59,10 @@ const GENERATION_BLEED_RANGES: Record<string, [number, number] | null> = {
   genz: [2003, 2007],        // bleed back into late Millennial
   all: null,
 };
-// Weight multiplier applied to bleed-only actors. ~0.4 → expected share ≈30%.
-const BLEED_WEIGHT = 0.4;
+// Weight multiplier applied to bleed-only actors. Boomer uses a higher value
+// to compensate for the genuinely smaller primary-era pool.
+const BLEED_WEIGHT_DEFAULT = 0.4;
+const BLEED_WEIGHT_BOOMER = 0.6;
 
 // Kevin Bacon — TMDB person id. Used for "Bacon Round" surprise pairs.
 const KEVIN_BACON_TMDB_ID = 4724;
