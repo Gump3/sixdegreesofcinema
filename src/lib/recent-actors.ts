@@ -40,6 +40,11 @@ export function getRecentActorIds(): number[] {
   return readRecent().slice(0, HARD_EXCLUDE_CAP);
 }
 
+/** Strict cooldown: actor IDs from the last ~6 games (both endpoints). */
+export function getRecentEndpointIds(): number[] {
+  return readRecent().slice(0, RECENT_ENDPOINT_CAP);
+}
+
 /** Soft-suppress list: older entries in the recent window (not in the hard cut). */
 export function getSuppressActorIds(): number[] {
   return readRecent().slice(HARD_EXCLUDE_CAP);
