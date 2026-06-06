@@ -628,9 +628,7 @@ export async function validateChain({ data }: { data: z.infer<typeof validateCha
 // ============== getAlternatesFn ==============
 // Heavy BFS lives behind its own endpoint so the validate call returns instantly.
 // The client calls this after a successful submit; it may take a while on first run.
-export const getAlternatesFn = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ gameId: z.string().uuid() }).parse(input))
-  .handler(async ({ data }) => {
+export async function getAlternatesFn({ data }: { data: { gameId: string } }) {
     const game = await supabaseAdmin
       .from("games")
       .select("actor_a, actor_b, shortest_path, alternates")
@@ -662,19 +660,15 @@ export const getAlternatesFn = createServerFn({ method: "POST" })
       degrees: shortest ? shortest.filter((s) => s.kind === "movie").length : null,
       debug: readDebugCounters(),
     };
-  });
+}
 
 // ============== getHint ==============
-export const getHint = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
-    z
-      .object({
-        gameId: z.string().uuid(),
-        currentChain: z.array(chainStepSchema).min(1),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
+const getHintInputSchema = z.object({
+  gameId: z.string().uuid(),
+  currentChain: z.array(chainStepSchema).min(1),
+});
+
+export async function getHint({ data }: { data: z.infer<typeof getHintInputSchema> }) {
     const game = await supabaseAdmin
       .from("games")
       .select("actor_a, actor_b, shortest_path")
@@ -733,7 +727,7 @@ export const getHint = createServerFn({ method: "POST" })
       return { hint: shortest[1], truncateTo: 1, reason: "Start with this move." };
     }
     return { hint: null, reason: "No further hint available.", truncateTo: null };
-  });
+}
 
 // ============== giveUp ==============
 export const giveUp = createServerFn({ method: "POST" })
