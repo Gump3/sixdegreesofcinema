@@ -4,7 +4,6 @@
  * IMPORTANT: This file must contain ONLY createServerFn declarations + their
  * imports, per the import-protection rule. Helpers live in tmdb.server.ts.
  */
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
@@ -85,21 +84,17 @@ async function fetchKevinBacon(): Promise<Person | null> {
   }
 }
 
-export const createGame = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
-    z
-      .object({
-        mode: z.enum(["noob", "buff"]).default("noob"),
-        difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
-        generation: z.enum(["boomer", "genx", "millennial", "genz", "all"]).default("all"),
-        excludeIds: z.array(z.number().int()).max(50).optional(),
-        suppressIds: z.array(z.number().int()).max(200).optional(),
-        frequency: z.record(z.string(), z.number().int().nonnegative()).optional(),
-        excludePairs: z.array(z.string().max(40)).max(60).optional(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
+const createGameInputSchema = z.object({
+  mode: z.enum(["noob", "buff"]).default("noob"),
+  difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
+  generation: z.enum(["boomer", "genx", "millennial", "genz", "all"]).default("all"),
+  excludeIds: z.array(z.number().int()).max(50).optional(),
+  suppressIds: z.array(z.number().int()).max(200).optional(),
+  frequency: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  excludePairs: z.array(z.string().max(40)).max(60).optional(),
+});
+
+export async function createGame({ data }: { data: z.infer<typeof createGameInputSchema> }) {
     const { mode, difficulty, generation, excludeIds, suppressIds, frequency, excludePairs } = data;
     const eraRange = GENERATION_RANGES[generation] ?? null;
 
@@ -311,7 +306,7 @@ export const createGame = createServerFn({ method: "POST" })
     if (error || !row) throw new Error(`Failed to create game: ${error?.message ?? "unknown"}`);
 
     return { gameId: row.id, actorA: aRec, actorB: bRec, mode, difficulty, isBaconRound };
-  });
+}
 
 // ============== getDailyChallenge ==============
 // Returns the daily challenge game for today (UTC). Creates one if it doesn't
