@@ -379,16 +379,19 @@ export async function searchMovies(query: string): Promise<Movie[]> {
     { query, include_adult: "false" },
     "search",
   );
-  return (data.results ?? [])
+  const eligible = (data.results ?? [])
     .filter((m) => isEligibleMovieBasic(m))
-    .slice(0, 12)
+    .slice(0, 20)
     .map((m) => ({
       id: m.id,
       title: m.title,
       poster_path: m.poster_path ?? null,
       release_date: m.release_date,
       popularity: m.popularity,
+      vote_count: m.vote_count,
     }));
+  const theatrical = await filterTheatrical(eligible);
+  return theatrical.slice(0, 12);
 }
 
 
