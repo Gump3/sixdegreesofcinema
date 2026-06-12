@@ -248,8 +248,8 @@ function GameScreen() {
             username,
             score: res.score ?? 0,
             degrees: res.degrees ?? 0,
-            actorA: game.actorA.name,
-            actorB: game.actorB.name,
+            actorA: (aActor ?? game.actorA).name,
+            actorB: (bActor ?? game.actorB).name,
             mode: game.mode,
           },
           ...history,
@@ -258,6 +258,9 @@ function GameScreen() {
         // Streak: solved → increment, await next puzzle (Continue button).
         if (isStreakGame) {
           streak.recordSolved(null);
+          const newCount = streak.state.count + 1;
+          const msg = milestoneMessage(newCount);
+          if (msg) setStreakMilestone({ count: newCount, message: msg });
         }
         // Wordle-style local stats.
         stats.recordResult(gameId, true, res.degrees ?? undefined);
@@ -301,6 +304,13 @@ function GameScreen() {
         // double the per-attempt cost on the server).
         setInvalidAttempts((n) => n + 1);
         setValidationLog((l) => [...l, `Invalid: ${res.reason}`]);
+        // Streak: an incorrect submission ends the run.
+        if (isStreakGame) {
+          const finalCount = streak.state.count;
+          const newBest = Math.max(streak.stats.best, finalCount);
+          streak.end(finalCount);
+          setStreakEnded({ finalCount, best: newBest });
+        }
       }
     } catch (e) {
       setResult({ valid: false, reason: e instanceof Error ? e.message : "Validation failed" });
@@ -325,6 +335,13 @@ function GameScreen() {
           return [...base, res.hint as ChainStep];
         });
         setValidationLog((l) => [...l, `Hint added: ${res.reason}`]);
+        // Streak: any hint ends the run.
+        if (isStreakGame) {
+          const finalCount = streak.state.count;
+          const newBest = Math.max(streak.stats.best, finalCount);
+          streak.end(finalCount);
+          setStreakEnded({ finalCount, best: newBest });
+        }
       } else {
         setValidationLog((l) => [...l, `No hint available: ${res.reason ?? ""}`]);
       }
