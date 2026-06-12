@@ -18,5 +18,9 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
+  // Do not register Supabase auth attachment here unless the app adds
+  // requireSupabaseAuth-protected server functions. This public game has no
+  // signed-in user session, and initializing the browser auth client during
+  // global server-function setup can trigger missing env errors on production.
   requestMiddleware: [errorMiddleware],
 }));
