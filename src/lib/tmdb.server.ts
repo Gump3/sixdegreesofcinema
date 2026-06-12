@@ -282,6 +282,12 @@ export async function getPersonCredits(personId: number): Promise<{
       vote_count: m.vote_count,
     }));
 
+  // Drop direct-to-video / TV-movie titles (release types ⊆ {5,6} & vote_count < 1000).
+  const [actingFiltered, directingFiltered] = await Promise.all([
+    filterTheatrical(acting),
+    filterTheatrical(directing),
+  ]);
+
   // Deduplicate by id (some people both acted and directed)
   const dedupe = (arr: Movie[]) => {
     const seen = new Set<number>();
@@ -294,7 +300,7 @@ export async function getPersonCredits(personId: number): Promise<{
     return out.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
   };
 
-  return { acting: dedupe(acting), directing: dedupe(directing) };
+  return { acting: dedupe(actingFiltered), directing: dedupe(directingFiltered) };
 }
 
 export async function getMovieCredits(movieId: number): Promise<{
