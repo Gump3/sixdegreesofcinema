@@ -823,7 +823,7 @@ function GameScreen() {
               <div className="mt-4 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4">
                 <div className="flex items-center gap-2 text-orange-300">
                   <Flame className="h-5 w-5" />
-                  <h3 className="font-display text-lg">Streak ended at {streakEnded.finalCount}</h3>
+                  <h3 className="font-display text-lg">That's a wrap! Your streak ended at {streakEnded.finalCount}.</h3>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Best streak: <span className="text-orange-300 font-semibold">{streakEnded.best}</span>. Start a new run anytime.
