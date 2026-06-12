@@ -16,6 +16,7 @@ import {
   User,
   X,
   Zap,
+  ArrowLeftRight,
 } from "lucide-react";
 import {
   createGame,
@@ -98,7 +99,9 @@ function GameScreen() {
   const stats = useStats();
   const isStreakGame = streak.hydrated && streak.state.active && streak.state.currentGameId === gameId;
   const [streakEnded, setStreakEnded] = useState<{ finalCount: number; best: number } | null>(null);
+  const [streakMilestone, setStreakMilestone] = useState<{ count: number; message: string } | null>(null);
   const [advancingStreak, setAdvancingStreak] = useState(false);
+  const [reversed, setReversed] = useState(false);
 
   const [game, setGame] = useState<GameData | null>(null);
   const startedAtRef = useRef<number | null>(null);
@@ -142,6 +145,8 @@ function GameScreen() {
     setDebugInfo(null);
     setValidationLog([]);
     setStreakEnded(null);
+    setStreakMilestone(null);
+    setReversed(false);
     setRefreshing(false);
     setAdvancingStreak(false);
     setPickerOpen(false);
@@ -169,18 +174,39 @@ function GameScreen() {
     };
   }, [gameId, loadGameFn]);
 
+  const aActor = game ? (reversed ? game.actorB : game.actorA) : null;
+  const bActor = game ? (reversed ? game.actorA : game.actorB) : null;
   const lastStep = chain[chain.length - 1];
   const nextKind: "person" | "movie" = lastStep?.kind === "person" ? "movie" : "person";
   const degreesUsed = chain.filter((s) => s.kind === "movie").length;
   const canSubmit =
     game !== null &&
+    bActor !== null &&
     chain.length >= 3 && // at minimum A → movie → B
     lastStep?.kind === "person" &&
     "id" in lastStep &&
-    lastStep.id === game.actorB.id &&
+    lastStep.id === bActor.id &&
     degreesUsed <= 6;
   const reachedTarget = canSubmit;
   const overLimit = degreesUsed > 6;
+  const canReverse = !!game && chain.length <= 1 && !result;
+
+  function toggleReverse() {
+    if (!game || chain.length > 1 || result) return;
+    const next = !reversed;
+    setReversed(next);
+    const newA = next ? game.actorB : game.actorA;
+    setChain([{ kind: "person", id: newA.id, name: newA.name, image: newA.image }]);
+  }
+
+  function milestoneMessage(count: number): string | null {
+    if (count === 3) return "You've got momentum. Don't fade to black now.";
+    if (count === 5) return "This is where the training montage pays off.";
+    if (count === 10) return "You're entering legendary sequel territory.";
+    if (count === 15) return "The box office records are getting nervous.";
+    if (count >= 20 && count % 5 === 0) return "The Academy would like a word.";
+    return null;
+  }
 
   function addStep(opt: PersonOpt | MovieOpt) {
     if (nextKind === "person" && "name" in opt) {
@@ -222,8 +248,8 @@ function GameScreen() {
             username,
             score: res.score ?? 0,
             degrees: res.degrees ?? 0,
-            actorA: game.actorA.name,
-            actorB: game.actorB.name,
+            actorA: (aActor ?? game.actorA).name,
+            actorB: (bActor ?? game.actorB).name,
             mode: game.mode,
           },
           ...history,
@@ -232,6 +258,9 @@ function GameScreen() {
         // Streak: solved → increment, await next puzzle (Continue button).
         if (isStreakGame) {
           streak.recordSolved(null);
+          const newCount = streak.state.count + 1;
+          const msg = milestoneMessage(newCount);
+          if (msg) setStreakMilestone({ count: newCount, message: msg });
         }
         // Wordle-style local stats.
         stats.recordResult(gameId, true, res.degrees ?? undefined);
@@ -275,6 +304,13 @@ function GameScreen() {
         // double the per-attempt cost on the server).
         setInvalidAttempts((n) => n + 1);
         setValidationLog((l) => [...l, `Invalid: ${res.reason}`]);
+        // Streak: an incorrect submission ends the run.
+        if (isStreakGame) {
+          const finalCount = streak.state.count;
+          const newBest = Math.max(streak.stats.best, finalCount);
+          streak.end(finalCount);
+          setStreakEnded({ finalCount, best: newBest });
+        }
       }
     } catch (e) {
       setResult({ valid: false, reason: e instanceof Error ? e.message : "Validation failed" });
@@ -299,6 +335,13 @@ function GameScreen() {
           return [...base, res.hint as ChainStep];
         });
         setValidationLog((l) => [...l, `Hint added: ${res.reason}`]);
+        // Streak: any hint ends the run.
+        if (isStreakGame) {
+          const finalCount = streak.state.count;
+          const newBest = Math.max(streak.stats.best, finalCount);
+          streak.end(finalCount);
+          setStreakEnded({ finalCount, best: newBest });
+        }
       } else {
         setValidationLog((l) => [...l, `No hint available: ${res.reason ?? ""}`]);
       }
@@ -543,9 +586,9 @@ function GameScreen() {
 
         {/* Actor pair */}
         <div className="grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-6 items-center mb-6">
-          <ActorCard actor={game.actorA} label="Start" />
+          <ActorCard actor={aActor ?? game.actorA} label="Start" />
           <div className="text-gold text-2xl font-display">→</div>
-          <ActorCard actor={game.actorB} label="End" />
+          <ActorCard actor={bActor ?? game.actorB} label="End" />
         </div>
 
         {/* Degrees meter */}
@@ -645,6 +688,22 @@ function GameScreen() {
               {givingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4" />}
               Give up
             </button>
+            {/* Reverse — solve the same pair in the opposite direction. Disabled once the user adds anything. */}
+            <button
+              onClick={toggleReverse}
+              disabled={!canReverse}
+              title={
+                canReverse
+                  ? reversed
+                    ? "Switch back to the original direction"
+                    : "Solve from right to left instead"
+                  : "Remove your added steps to switch direction"
+              }
+              className="ml-2 inline-flex items-center justify-center gap-2 border border-gold/40 text-gold-bright rounded-md px-4 py-3 text-sm hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+              {reversed ? "Revert order" : "Reverse"}
+            </button>
           </div>
         )}
 
@@ -658,15 +717,25 @@ function GameScreen() {
             >
               <Film className="h-3.5 w-3.5" /> Home
             </button>
-            {!isStreakGame && !game.isDaily && (
+            {isStreakGame ? (
               <button
-                onClick={newPair}
-                disabled={refreshing}
-                className="border border-border text-foreground py-2 px-3 rounded-md text-xs hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
+                onClick={playAgain}
+                className="border border-orange-500/40 text-orange-300 py-2 px-3 rounded-md text-xs hover:bg-orange-500/10 inline-flex items-center gap-2"
+                title="Pop back home — your streak waits for you"
               >
-                {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                New pair
+                <Flame className="h-3.5 w-3.5" /> Keep the streak going!
               </button>
+            ) : (
+              !game.isDaily && (
+                <button
+                  onClick={newPair}
+                  disabled={refreshing}
+                  className="border border-border text-foreground py-2 px-3 rounded-md text-xs hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
+                >
+                  {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  New pair
+                </button>
+              )
             )}
           </div>
         )}
@@ -754,7 +823,7 @@ function GameScreen() {
               <div className="mt-4 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4">
                 <div className="flex items-center gap-2 text-orange-300">
                   <Flame className="h-5 w-5" />
-                  <h3 className="font-display text-lg">Streak ended at {streakEnded.finalCount}</h3>
+                  <h3 className="font-display text-lg">That's a wrap! Your streak ended at {streakEnded.finalCount}.</h3>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Best streak: <span className="text-orange-300 font-semibold">{streakEnded.best}</span>. Start a new run anytime.
@@ -851,6 +920,67 @@ function GameScreen() {
           </details>
         )}
       </div>
+
+      {/* Streak milestone — pop-up dialog on hitting a win-streak milestone. */}
+      {streakMilestone && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setStreakMilestone(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-xl border border-orange-500/50 bg-card p-6 shadow-gold"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setStreakMilestone(null)}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2 text-orange-300 mb-2">
+              <Flame className="h-5 w-5" />
+              <h3 className="font-display text-lg">Streak: {streakMilestone.count} 🔥</h3>
+            </div>
+            <p className="text-sm text-foreground">{streakMilestone.message}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Streak-ended dialog — separate modal so the user sees it immediately. */}
+      {streakEnded && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setStreakEnded(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-xl border border-orange-500/50 bg-card p-6 shadow-gold"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setStreakEnded(null)}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2 text-orange-300 mb-2">
+              <Flame className="h-5 w-5" />
+              <h3 className="font-display text-lg">That's a wrap!</h3>
+            </div>
+            <p className="text-sm text-foreground">
+              Your streak ended at {streakEnded.finalCount}.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Best streak: <span className="text-orange-300 font-semibold">{streakEnded.best}</span>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {isDebug && <DebugPanel debug={debugInfo} validationLog={validationLog} />}
     </main>
