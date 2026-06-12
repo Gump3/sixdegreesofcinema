@@ -198,6 +198,55 @@ function isCameoCharacter(character?: string | null): boolean {
   return CAMEO_RE.test(character);
 }
 
+// ===== Direct-to-video / TV-movie filter =====
+// TMDB release types: 1=Premiere, 2=Theatrical(limited), 3=Theatrical,
+// 4=Digital, 5=Physical, 6=TV. We exclude movies whose release types are
+// EXCLUSIVELY physical (5) or TV (6) AND that have a low vote_count. This
+// catches Hallmark / SyFy / DTV-sequel junk without touching prestige
+// streaming originals (which carry type 4 and/or 1).
+const DTV_MIN_VOTES_BYPASS = 1000;
+
+async function getMovieReleaseTypes(movieId: number): Promise<Set<number>> {
+  try {
+    const data = await tmdb<{
+      results?: Array<{ release_dates?: Array<{ type?: number }> }>;
+    }>(`/movie/${movieId}/release_dates`, {}, "release_dates");
+    const types = new Set<number>();
+    for (const c of data.results ?? []) {
+      for (const rd of c.release_dates ?? []) {
+        if (typeof rd.type === "number") types.add(rd.type);
+      }
+    }
+    return types;
+  } catch {
+    return new Set<number>();
+  }
+}
+
+/**
+ * Returns true if a movie passes the theatrical/streaming filter.
+ * Bypasses the TMDB call for well-known films (vote_count >= 1000).
+ * Fails open (keeps the movie) if release_dates is empty/unavailable.
+ */
+async function passesTheatricalFilter(m: { id: number; vote_count?: number }): Promise<boolean> {
+  if ((m.vote_count ?? 0) >= DTV_MIN_VOTES_BYPASS) return true;
+  const types = await getMovieReleaseTypes(m.id);
+  if (types.size === 0) return true; // no data → don't penalize
+  // Drop only when EVERY release type is in {5, 6}.
+  for (const t of types) {
+    if (t !== 5 && t !== 6) return true;
+  }
+  return false;
+}
+
+async function filterTheatrical<T extends { id: number; vote_count?: number }>(
+  movies: T[],
+): Promise<T[]> {
+  if (movies.length === 0) return movies;
+  const results = await Promise.all(movies.map((m) => passesTheatricalFilter(m)));
+  return movies.filter((_, i) => results[i]);
+}
+
 // ============== People & movies (high-level) ==============
 export async function getPersonCredits(personId: number): Promise<{
   acting: Movie[];
@@ -233,6 +282,12 @@ export async function getPersonCredits(personId: number): Promise<{
       vote_count: m.vote_count,
     }));
 
+  // Drop direct-to-video / TV-movie titles (release types ⊆ {5,6} & vote_count < 1000).
+  const [actingFiltered, directingFiltered] = await Promise.all([
+    filterTheatrical(acting),
+    filterTheatrical(directing),
+  ]);
+
   // Deduplicate by id (some people both acted and directed)
   const dedupe = (arr: Movie[]) => {
     const seen = new Set<number>();
@@ -245,7 +300,7 @@ export async function getPersonCredits(personId: number): Promise<{
     return out.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
   };
 
-  return { acting: dedupe(acting), directing: dedupe(directing) };
+  return { acting: dedupe(actingFiltered), directing: dedupe(directingFiltered) };
 }
 
 export async function getMovieCredits(movieId: number): Promise<{
@@ -324,16 +379,19 @@ export async function searchMovies(query: string): Promise<Movie[]> {
     { query, include_adult: "false" },
     "search",
   );
-  return (data.results ?? [])
+  const eligible = (data.results ?? [])
     .filter((m) => isEligibleMovieBasic(m))
-    .slice(0, 12)
+    .slice(0, 20)
     .map((m) => ({
       id: m.id,
       title: m.title,
       poster_path: m.poster_path ?? null,
       release_date: m.release_date,
       popularity: m.popularity,
+      vote_count: m.vote_count,
     }));
+  const theatrical = await filterTheatrical(eligible);
+  return theatrical.slice(0, 12);
 }
 
 
