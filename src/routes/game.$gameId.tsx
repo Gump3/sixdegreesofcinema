@@ -921,6 +921,67 @@ function GameScreen() {
         )}
       </div>
 
+      {/* Streak milestone — pop-up dialog on hitting a win-streak milestone. */}
+      {streakMilestone && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setStreakMilestone(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-xl border border-orange-500/50 bg-card p-6 shadow-gold"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setStreakMilestone(null)}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2 text-orange-300 mb-2">
+              <Flame className="h-5 w-5" />
+              <h3 className="font-display text-lg">Streak: {streakMilestone.count} 🔥</h3>
+            </div>
+            <p className="text-sm text-foreground">{streakMilestone.message}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Streak-ended dialog — separate modal so the user sees it immediately. */}
+      {streakEnded && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setStreakEnded(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-xl border border-orange-500/50 bg-card p-6 shadow-gold"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setStreakEnded(null)}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2 text-orange-300 mb-2">
+              <Flame className="h-5 w-5" />
+              <h3 className="font-display text-lg">That's a wrap!</h3>
+            </div>
+            <p className="text-sm text-foreground">
+              Your streak ended at {streakEnded.finalCount}.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Best streak: <span className="text-orange-300 font-semibold">{streakEnded.best}</span>.
+            </p>
+          </div>
+        </div>
+      )}
+
       {isDebug && <DebugPanel debug={debugInfo} validationLog={validationLog} />}
     </main>
   );
