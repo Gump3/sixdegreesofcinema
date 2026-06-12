@@ -257,7 +257,10 @@ function GameScreen() {
 
         // Streak: solved → increment, await next puzzle (Continue button).
         if (isStreakGame) {
-          streak.recordSolved(null);
+          // Keep currentGameId pointing at THIS game so `isStreakGame` stays
+          // true on the result screen — otherwise the "Continue Streak" CTA
+          // collapses back to the generic "New pair" buttons.
+          streak.recordSolved(gameId);
           const newCount = streak.state.count + 1;
           const msg = milestoneMessage(newCount);
           if (msg) setStreakMilestone({ count: newCount, message: msg });
