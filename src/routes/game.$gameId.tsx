@@ -586,9 +586,9 @@ function GameScreen() {
 
         {/* Actor pair */}
         <div className="grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-6 items-center mb-6">
-          <ActorCard actor={game.actorA} label="Start" />
+          <ActorCard actor={aActor ?? game.actorA} label="Start" />
           <div className="text-gold text-2xl font-display">→</div>
-          <ActorCard actor={game.actorB} label="End" />
+          <ActorCard actor={bActor ?? game.actorB} label="End" />
         </div>
 
         {/* Degrees meter */}
@@ -688,6 +688,22 @@ function GameScreen() {
               {givingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4" />}
               Give up
             </button>
+            {/* Reverse — solve the same pair in the opposite direction. Disabled once the user adds anything. */}
+            <button
+              onClick={toggleReverse}
+              disabled={!canReverse}
+              title={
+                canReverse
+                  ? reversed
+                    ? "Switch back to the original direction"
+                    : "Solve from right to left instead"
+                  : "Remove your added steps to switch direction"
+              }
+              className="ml-2 inline-flex items-center justify-center gap-2 border border-gold/40 text-gold-bright rounded-md px-4 py-3 text-sm hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+              {reversed ? "Revert order" : "Reverse"}
+            </button>
           </div>
         )}
 
@@ -701,15 +717,25 @@ function GameScreen() {
             >
               <Film className="h-3.5 w-3.5" /> Home
             </button>
-            {!isStreakGame && !game.isDaily && (
+            {isStreakGame ? (
               <button
-                onClick={newPair}
-                disabled={refreshing}
-                className="border border-border text-foreground py-2 px-3 rounded-md text-xs hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
+                onClick={playAgain}
+                className="border border-orange-500/40 text-orange-300 py-2 px-3 rounded-md text-xs hover:bg-orange-500/10 inline-flex items-center gap-2"
+                title="Pop back home — your streak waits for you"
               >
-                {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                New pair
+                <Flame className="h-3.5 w-3.5" /> Keep the streak going!
               </button>
+            ) : (
+              !game.isDaily && (
+                <button
+                  onClick={newPair}
+                  disabled={refreshing}
+                  className="border border-border text-foreground py-2 px-3 rounded-md text-xs hover:bg-secondary inline-flex items-center gap-2 disabled:opacity-50"
+                >
+                  {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  New pair
+                </button>
+              )
             )}
           </div>
         )}
