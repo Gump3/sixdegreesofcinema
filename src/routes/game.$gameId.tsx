@@ -16,6 +16,7 @@ import {
   User,
   X,
   Zap,
+  ArrowLeftRight,
 } from "lucide-react";
 import {
   createGame,
@@ -98,7 +99,9 @@ function GameScreen() {
   const stats = useStats();
   const isStreakGame = streak.hydrated && streak.state.active && streak.state.currentGameId === gameId;
   const [streakEnded, setStreakEnded] = useState<{ finalCount: number; best: number } | null>(null);
+  const [streakMilestone, setStreakMilestone] = useState<{ count: number; message: string } | null>(null);
   const [advancingStreak, setAdvancingStreak] = useState(false);
+  const [reversed, setReversed] = useState(false);
 
   const [game, setGame] = useState<GameData | null>(null);
   const startedAtRef = useRef<number | null>(null);
@@ -142,6 +145,8 @@ function GameScreen() {
     setDebugInfo(null);
     setValidationLog([]);
     setStreakEnded(null);
+    setStreakMilestone(null);
+    setReversed(false);
     setRefreshing(false);
     setAdvancingStreak(false);
     setPickerOpen(false);
@@ -169,18 +174,39 @@ function GameScreen() {
     };
   }, [gameId, loadGameFn]);
 
+  const aActor = game ? (reversed ? game.actorB : game.actorA) : null;
+  const bActor = game ? (reversed ? game.actorA : game.actorB) : null;
   const lastStep = chain[chain.length - 1];
   const nextKind: "person" | "movie" = lastStep?.kind === "person" ? "movie" : "person";
   const degreesUsed = chain.filter((s) => s.kind === "movie").length;
   const canSubmit =
     game !== null &&
+    bActor !== null &&
     chain.length >= 3 && // at minimum A → movie → B
     lastStep?.kind === "person" &&
     "id" in lastStep &&
-    lastStep.id === game.actorB.id &&
+    lastStep.id === bActor.id &&
     degreesUsed <= 6;
   const reachedTarget = canSubmit;
   const overLimit = degreesUsed > 6;
+  const canReverse = !!game && chain.length <= 1 && !result;
+
+  function toggleReverse() {
+    if (!game || chain.length > 1 || result) return;
+    const next = !reversed;
+    setReversed(next);
+    const newA = next ? game.actorB : game.actorA;
+    setChain([{ kind: "person", id: newA.id, name: newA.name, image: newA.image }]);
+  }
+
+  function milestoneMessage(count: number): string | null {
+    if (count === 3) return "You've got momentum. Don't fade to black now.";
+    if (count === 5) return "This is where the training montage pays off.";
+    if (count === 10) return "You're entering legendary sequel territory.";
+    if (count === 15) return "The box office records are getting nervous.";
+    if (count >= 20 && count % 5 === 0) return "The Academy would like a word.";
+    return null;
+  }
 
   function addStep(opt: PersonOpt | MovieOpt) {
     if (nextKind === "person" && "name" in opt) {
