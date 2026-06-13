@@ -39,6 +39,19 @@ export function Footer() {
           .
         </p>
 
+        <p className="mt-3">
+          Created by the writer behind{" "}
+          <a
+            href="https://thereeldispatch.substack.com"
+            target="_blank"
+            rel="noopener noreferrer me"
+            className="text-gold hover:underline"
+          >
+            The Reel Dispatch
+          </a>
+          .
+        </p>
+
         <p className="mt-1 inline-flex items-center gap-2 flex-wrap justify-center">
           <span>© {new Date().getFullYear()} Six Degrees of Cinema. All rights reserved.</span>
           <button
