@@ -18,9 +18,10 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  // Do not add functionMiddleware here unless this public game introduces
-  // requireSupabaseAuth-protected server functions. Registering the generated
-  // auth attacher loads the browser backend client during server rendering and
-  // causes the published missing SUPABASE_URL/PUBLISHABLE_KEY error.
+  // Keep this public app free of global functionMiddleware. In particular,
+  // do NOT import/register `attachSupabaseAuth` here unless app code starts
+  // using `requireSupabaseAuth`. The generated auth-attacher imports the
+  // browser backend client, which triggers the published missing
+  // SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY error during public SSR.
   requestMiddleware: [errorMiddleware],
 }));
