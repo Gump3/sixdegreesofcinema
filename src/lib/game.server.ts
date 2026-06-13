@@ -507,13 +507,19 @@ export async function getMoviePeopleFn({ data }: { data: { movieId: number } }) 
       .map((p) => ({ ...personDto(p), role: "cast" as const }));
     const dirs = credits.directors.map((p) => ({ ...personDto(p), role: "director" as const }));
     const seen = new Set<number>();
-    const out: Array<ReturnType<typeof personDto> & { role: "cast" | "director" }> = [];
+    const merged: Array<ReturnType<typeof personDto> & { role: "cast" | "director" }> = [];
     for (const p of [...dirs, ...top]) {
       if (seen.has(p.id)) continue;
       seen.add(p.id);
-      out.push(p);
+      merged.push(p);
     }
-    return out;
+    // Require an English Wikipedia article for connector cast/directors too,
+    // so picker candidates match the endpoint pool's notability bar. Fails
+    // open per-person on Wikidata/TMDB lookup errors (cached 30d).
+    const filtered = await filterWithEnglishWikipedia(merged);
+    // Safety: never strip the list down to nothing — if filter would empty it,
+    // fall back to the unfiltered merged list so the picker still works.
+    return filtered.length >= 1 ? filtered : merged;
 }
 
 // ============== validateChain ==============
