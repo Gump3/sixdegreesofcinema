@@ -167,6 +167,67 @@ export function isNotablePerson(p: { popularity?: number }): boolean {
   return (p.popularity ?? 0) >= MIN_PERSON_POPULARITY;
 }
 
+// ===== English Wikipedia presence check =====
+// Pool actors must have an English Wikipedia article. We resolve TMDB person
+// → Wikidata Q-ID (via /person/{id}/external_ids) → check `enwiki` sitelink
+// via the Wikidata API. Results cached 30 days in tmdb_cache under a
+// dedicated key namespace so they share the existing TTL/expiry plumbing.
+async function readWikiCache(key: string): Promise<boolean | null> {
+  const v = await readCache(key);
+  if (v === null || typeof v !== "object") return null;
+  const obj = v as { has?: boolean };
+  return typeof obj.has === "boolean" ? obj.has : null;
+}
+async function writeWikiCache(key: string, has: boolean) {
+  await writeCache(key, { has }, "release_dates");
+}
+
+async function checkEnwikiSitelink(qid: string): Promise<boolean> {
+  const cacheKey = `wikidata:sitelink:enwiki:${qid}`;
+  const cached = await readWikiCache(cacheKey);
+  if (cached !== null) return cached;
+  try {
+    const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${encodeURIComponent(
+      qid,
+    )}&props=sitelinks&sitefilter=enwiki&format=json&origin=*`;
+    const res = await fetch(url, { headers: { accept: "application/json" } });
+    if (!res.ok) return true; // fail open
+    const json = (await res.json()) as {
+      entities?: Record<string, { sitelinks?: { enwiki?: { title?: string } } }>;
+    };
+    const ent = json.entities?.[qid];
+    const has = !!ent?.sitelinks?.enwiki?.title;
+    await writeWikiCache(cacheKey, has);
+    return has;
+  } catch {
+    return true; // fail open on network errors
+  }
+}
+
+export async function hasEnglishWikipedia(personId: number): Promise<boolean> {
+  try {
+    const ext = await tmdb<{ wikidata_id?: string | null }>(
+      `/person/${personId}/external_ids`,
+      {},
+      "release_dates",
+    );
+    const qid = ext.wikidata_id;
+    if (!qid) return false;
+    return await checkEnwikiSitelink(qid);
+  } catch {
+    return true; // fail open: don't starve the pool on TMDB hiccups
+  }
+}
+
+/** Concurrent filter — keeps only persons with an English Wikipedia article. */
+export async function filterWithEnglishWikipedia<T extends { id: number }>(
+  people: T[],
+): Promise<T[]> {
+  if (people.length === 0) return people;
+  const results = await Promise.all(people.map((p) => hasEnglishWikipedia(p.id)));
+  return people.filter((_, i) => results[i]);
+}
+
 export type ChainStep =
   | { kind: "person"; id: number; name: string; image: string | null }
   | { kind: "movie"; id: number; title: string; image: string | null; year: string | null };

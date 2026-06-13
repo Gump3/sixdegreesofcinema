@@ -14,6 +14,7 @@ import {
   findShortestPath,
   getMovieCredits,
   getPersonCredits,
+  filterWithEnglishWikipedia,
   getPopularPeoplePage,
   movieDto,
   personDto,
@@ -164,7 +165,15 @@ export async function createGame({ data }: { data: z.infer<typeof createGameInpu
 
     // Deduplicate by id (keep first occurrence — primary wins over bleed).
     const seen = new Set<number>();
-    const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+    const dedup = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+
+    // Require an English Wikipedia article for every pool member. Filters out
+    // TMDB-only / obscure actors (e.g. background-credit Julia Doyle types) so
+    // Give Up / Hint always have something meaningful to reveal. Fails open
+    // per-person on lookup errors; cached 30d so steady-state cost is ~0.
+    let unique: Person[] = await filterWithEnglishWikipedia(dedup);
+    // Safety: if Wikipedia filter starves the pool, fall back to the unfiltered set.
+    if (unique.length < 2) unique = dedup;
 
     // Two-tier hard-exclude:
     //   - recentEndpointIds (last ~6 games): NEVER allow these — strict cooldown
