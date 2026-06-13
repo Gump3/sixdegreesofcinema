@@ -26,6 +26,22 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
         </p>
 
         <div className="pt-2 border-t border-border/60">
+          <h3 className="text-xs uppercase tracking-widest text-gold mb-3">Created by</h3>
+          <p>
+            Created by the writer behind{" "}
+            <a
+              href="https://thereeldispatch.substack.com"
+              target="_blank"
+              rel="noopener noreferrer me"
+              className="text-gold hover:underline"
+            >
+              The Reel Dispatch
+            </a>
+            .
+          </p>
+        </div>
+
+        <div className="pt-2 border-t border-border/60">
           <h3 className="text-xs uppercase tracking-widest text-gold mb-3">Attribution</h3>
           <a
             href="https://www.themoviedb.org/"
