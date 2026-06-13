@@ -14,6 +14,7 @@ import {
   findShortestPath,
   getMovieCredits,
   getPersonCredits,
+  filterWithEnglishWikipedia,
   getPopularPeoplePage,
   movieDto,
   personDto,
