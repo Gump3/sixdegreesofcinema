@@ -555,16 +555,19 @@ export async function validateChain({ data }: { data: z.infer<typeof validateCha
 
     const chain = data.chain;
 
-    // Must start with Actor A and end with Actor B
-    if (chain[0]?.kind !== "person" || chain[0].id !== actorA.id) {
-      return { valid: false, reason: `Chain must start with ${actorA.name}.`, invalidStepIndex: 0, isBaconRound };
-    }
+    // Endpoints must be Actor A and Actor B in either order (Reverse is allowed).
+    const first = chain[0];
     const last = chain[chain.length - 1];
-    if (last.kind !== "person" || last.id !== actorB.id) {
+    const endpointIds = new Set([actorA.id, actorB.id]);
+    const firstOk = first.kind === "person" && endpointIds.has(first.id);
+    const lastOk = last.kind === "person" && endpointIds.has(last.id);
+    const distinctEndpoints =
+      first.kind === "person" && last.kind === "person" && first.id !== last.id;
+    if (!firstOk || !lastOk || !distinctEndpoints) {
       return {
         valid: false,
-        reason: `Chain must end with ${actorB.name}.`,
-        invalidStepIndex: chain.length - 1,
+        reason: `Chain must connect ${actorA.name} and ${actorB.name}.`,
+        invalidStepIndex: !firstOk ? 0 : chain.length - 1,
         isBaconRound,
       };
     }
