@@ -1,12 +1,11 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 // IMPORTANT: Do NOT import `attachSupabaseAuth` from
 // `@/integrations/supabase/auth-attacher` here. This app has no
 // `requireSupabaseAuth`-protected server functions, and the auth-attacher
-// transitively imports the browser backend client, which throws
+// transitively imports the browser Supabase client, which throws
 // "Missing Supabase environment variable(s): SUPABASE_URL,
 // SUPABASE_PUBLISHABLE_KEY" during public SSR on the published site.
 
@@ -26,6 +25,5 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware],
 }));
