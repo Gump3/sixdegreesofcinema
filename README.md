@@ -28,7 +28,13 @@ Every pair has a solution — the challenge is finding the **shortest** one. You
 
 ## 🧱 Tech stack
 
-[TanStack Start](https://tanstack.com/start) (React 19, SSR, typed server functions) · Vite 7 · Tailwind CSS v4 + shadcn/ui + Radix · TanStack Router & Query · Supabase (Postgres + RLS) · Cloudflare Workers · TypeScript + Zod · [TMDB API](https://www.themoviedb.org/) for movie data.
+- **Framework:** [TanStack Start](https://tanstack.com/start) (React 19, SSR/SSG, typed server functions) on Vite 7
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) + [Radix UI](https://www.radix-ui.com/)
+- **Backend / data:** [Supabase](https://supabase.com/) (Postgres + Row Level Security) via Lovable Cloud
+- **Runtime:** Cloudflare Workers (serverless edge)
+- **Routing & data fetching:** [TanStack Router](https://tanstack.com/router) + [TanStack Query](https://tanstack.com/query)
+- **Movie data:** [The Movie Database (TMDB) API](https://www.themoviedb.org/)
+- **Type safety:** TypeScript + Zod
 
 ## 🚀 Getting started (local dev)
 
