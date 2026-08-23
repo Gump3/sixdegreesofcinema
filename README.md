@@ -54,13 +54,51 @@ bun run lint       # eslint
 
 RLS enabled on all backend tables with scoped grants; server logic and credentials stay in server-only modules (the client never sees them); public webhook/cron endpoints verify callers. No account needed to play.
 
+## 🔎 Privacy & analytics
+
+- **Gameplay events** — the app records anonymous events (puzzle started, completed, given up, share used) along with difficulty, mode, whether it was the Daily Challenge, device type (mobile/desktop), solve time, and degrees used. These are keyed to a random identifier generated and stored in your browser's local storage, and reset if you clear it.
+- **Puzzle rows** — each puzzle (the actor pair, the chain, the score) is stored in the backend so solutions can be validated and shortest paths surfaced.
+- **Local only** — your display name, theme, stats, and streaks live in your browser's local storage.
+- **No ads or tracking pixels.** The hosting provider may log standard request data (e.g. IP address, timestamps) for security and reliability.
+- **Error monitoring** — Sentry is scaffolded and only active when configured.
+
 ## 📄 License
 
 Proprietary. All rights reserved. See [`LICENSE`](./LICENSE).
 
+That license covers this project's **original source code only**. It does not grant any rights to third-party content (images, metadata, trademarks, photographs, names, or other materials) that the app fetches or displays.
+
 ## 🙏 Attribution
 
 Actor, movie, and image data provided by **[The Movie Database (TMDB)](https://www.themoviedb.org/)**. This product uses the TMDB API but is **not endorsed or certified by TMDB**.
+
+TMDB is the source of the movie and person metadata, cast/crew relationships, and poster and profile imagery used by the game. See the [TMDB API / developer documentation](https://developer.themoviedb.org/docs).
+
+The app also performs [Wikidata](https://www.wikidata.org/) lookups to check for an English Wikipedia article when filtering the actor pool.
+
+## 🧾 Third-party intellectual property
+
+Movie titles, posters, backdrops, actor and filmmaker names, photographs, character names, logos, trademarks, and other third-party materials may belong to their respective copyright, trademark, publicity-rights, or other rights holders.
+
+This project does not claim ownership of any of those materials. They are used to identify and present the movies, people, and connections represented by the game.
+
+## ⚠️ Repository & image reuse notice
+
+The presence of TMDB-sourced posters, actor images, backdrops, metadata, or other third-party materials in — or served by — this project does **not** mean those materials are free to reuse.
+
+Do not copy, scrape, redistribute, republish, repackage, or commercially exploit TMDB-sourced imagery or other third-party copyrighted materials from this project without obtaining the appropriate rights or permissions from the relevant rights holders. Any software license applying to this repository applies to the original code, not to third-party content.
+
+## 🚫 No affiliation or endorsement
+
+This is an independent developer/fan project. It is not affiliated with, sponsored by, approved by, endorsed by, or certified by TMDB, movie studios, production companies, distributors, streaming services, actors, filmmakers, or any other rights holders, unless explicitly stated otherwise.
+
+## 📬 Rights concerns
+
+If you are a copyright, trademark, publicity-rights, or other rights holder with a concern about specific content shown by this project, please contact the project owner at [thereeldispatch@gmail.com](mailto:thereeldispatch@gmail.com) for review.
+
+## 📌 Disclaimer
+
+This game and the third-party materials it displays are provided for entertainment and informational purposes. The project does not claim ownership of third-party intellectual property, and nothing in this README is legal advice.
 
 ---
 
