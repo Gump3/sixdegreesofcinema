@@ -54,6 +54,17 @@ bun run lint       # eslint
 
 RLS enabled on all backend tables with scoped grants; server logic and credentials stay in server-only modules (the client never sees them); public webhook/cron endpoints verify callers. No account needed to play.
 
+**Secret scanning.** No secret values live in this repository — `.env` is git-ignored and only `.env.example` is tracked. A zero-dependency scanner guards against regressions:
+
+```bash
+npm run scan:secrets          # scan every tracked file
+node scripts/scan-secrets.mjs # scan staged files only
+git config core.hooksPath .githooks  # enable the local pre-commit hook (one-time)
+```
+
+It also runs in CI on every push and pull request (`.github/workflows/secret-scan.yml`). Matches are reported by file and line only — never by value.
+
+
 ## 🔎 Privacy & analytics
 
 - **Gameplay events** — the app records anonymous events (puzzle started, completed, given up, share used) along with difficulty, mode, whether it was the Daily Challenge, device type (mobile/desktop), solve time, and degrees used. These are keyed to a random identifier generated and stored in your browser's local storage, and reset if you clear it.

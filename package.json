@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "scan:secrets": "node scripts/scan-secrets.mjs --all",
     "format": "prettier --write ."
   },
   "dependencies": {
