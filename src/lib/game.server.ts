@@ -731,11 +731,19 @@ export async function getHint({ data }: { data: z.infer<typeof getHintInputSchem
 
     if (!shortest) return { hint: null, reason: "No path found within 6 degrees.", truncateTo: null };
 
+    // Orientation: the stored path always runs Actor A → Actor B, but after a
+    // "Reverse" the player's chain starts at Actor B. Detect that and work
+    // against the path flipped B → A so anchors and suggestions line up with
+    // what the player is actually building.
+    const cur = data.currentChain;
+    const startsAtB =
+      cur[0]?.kind === "person" && (cur[0] as { id: number }).id === actorB.id && actorA.id !== actorB.id;
+    const oriented = startsAtB ? [...shortest].reverse() : shortest;
+
     // Walk the user's chain from the end backwards: the deepest step that's
-    // also on the canonical shortest path becomes our anchor, and we suggest
+    // also on the (oriented) shortest path becomes our anchor, and we suggest
     // the next step from there. This makes Hint useful at ANY point in the
     // game — even after the user has wandered off the optimal path.
-    const cur = data.currentChain;
     for (let i = cur.length - 1; i >= 0; i--) {
       const step = cur[i];
       const idx = shortest.findIndex(
