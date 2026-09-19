@@ -746,13 +746,13 @@ export async function getHint({ data }: { data: z.infer<typeof getHintInputSchem
     // game — even after the user has wandered off the optimal path.
     for (let i = cur.length - 1; i >= 0; i--) {
       const step = cur[i];
-      const idx = shortest.findIndex(
+      const idx = oriented.findIndex(
         (s) => s.kind === step.kind && s.id === (step as { id: number }).id,
       );
-      if (idx >= 0 && idx < shortest.length - 1) {
+      if (idx >= 0 && idx < oriented.length - 1) {
         const wandered = i < cur.length - 1;
         return {
-          hint: shortest[idx + 1],
+          hint: oriented[idx + 1],
           // Client should truncate the chain to length (i + 1) before appending
           // the hint — this keeps person/movie alternation intact when the user
           // had wandered off the shortest path.
