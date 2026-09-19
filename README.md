@@ -12,7 +12,7 @@ Inspired by the classic *Six Degrees of Kevin Bacon*, this game brings the idea 
 
 You're given two random actors. Build a chain connecting them where each link is either a **movie** shared by two consecutive actors, or an **actor** connected through a shared film (directors are in scope too).
 
-Every pair has a solution — the challenge is finding the **shortest** one. Your chain is validated server-side with a bidirectional search over the cached TMDB credit graph.
+Every pair has a solution — the challenge is finding the **shortest** one. Your chain is validated server-side with a bidirectional BFS search over the cached TMDB credit graph.
 
 ## ✨ Features
 
