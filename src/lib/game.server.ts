@@ -768,9 +768,9 @@ export async function getHint({ data }: { data: z.infer<typeof getHintInputSchem
     }
 
     // Fallback: chain shares nothing with the path (shouldn't happen since
-    // chain[0] is always Actor A = shortest[0]) — suggest the first move.
-    if (shortest.length >= 2) {
-      return { hint: shortest[1], truncateTo: 1, reason: "Start with this move." };
+    // chain[0] is always a path endpoint) — suggest the first move.
+    if (oriented.length >= 2) {
+      return { hint: oriented[1], truncateTo: 1, reason: "Start with this move." };
     }
     return { hint: null, reason: "No further hint available.", truncateTo: null };
 }
