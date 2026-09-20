@@ -515,12 +515,17 @@ function GameScreen() {
   }
 
   if (loadErr) {
+    const missing = /not found/i.test(loadErr);
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{loadErr}</p>
+        <div className="text-center max-w-md">
+          <p className="text-destructive mb-4">
+            {missing
+              ? "This puzzle is no longer available — it may have expired or been replaced."
+              : loadErr}
+          </p>
           <Link to="/" className="text-gold-bright underline">
-            Back to home
+            Start a new game
           </Link>
         </div>
       </main>
