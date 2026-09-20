@@ -51,7 +51,8 @@ function HomePage() {
   const createGameFn = useServerFn(createGame);
   const dailyFn = useServerFn(getDailyChallenge);
   const [username, setUsername, hydrated] = useLocalStorage<string>("sdh:username", "");
-  const [draftName, setDraftName] = useState("");
+  // null = untouched by the user (mirror the stored name); "" = user cleared it on purpose
+  const [draftName, setDraftName] = useState<string | null>(null);
   const [mode, setMode] = useLocalStorage<Mode>("sdh:mode", "noob");
   const [difficulty, setDifficulty] = useLocalStorage<Difficulty>("sdh:difficulty", "easy");
   const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
