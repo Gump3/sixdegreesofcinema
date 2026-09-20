@@ -16,6 +16,7 @@ import {
   getPersonCredits,
   filterWithEnglishWikipedia,
   getPopularPeoplePage,
+  isNotablePerson,
   movieDto,
   personDto,
   readDebugCounters,
