@@ -64,7 +64,9 @@ function HomePage() {
 
   const [error, setError] = useState<string | null>(null);
 
-  const effectiveName = username || draftName;
+  // What is actually shown/used: the user's edit if they've typed, otherwise the stored name
+  const nameValue = draftName ?? (hydrated ? username : "");
+  const effectiveName = nameValue || username;
 
   async function handleStart() {
     setError(null);
