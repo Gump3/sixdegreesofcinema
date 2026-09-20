@@ -51,7 +51,8 @@ function HomePage() {
   const createGameFn = useServerFn(createGame);
   const dailyFn = useServerFn(getDailyChallenge);
   const [username, setUsername, hydrated] = useLocalStorage<string>("sdh:username", "");
-  const [draftName, setDraftName] = useState("");
+  // null = untouched by the user (mirror the stored name); "" = user cleared it on purpose
+  const [draftName, setDraftName] = useState<string | null>(null);
   const [mode, setMode] = useLocalStorage<Mode>("sdh:mode", "noob");
   const [difficulty, setDifficulty] = useLocalStorage<Difficulty>("sdh:difficulty", "easy");
   const [generation, setGeneration] = useLocalStorage<Generation>("sdh:generation", "all");
@@ -63,11 +64,13 @@ function HomePage() {
 
   const [error, setError] = useState<string | null>(null);
 
-  const effectiveName = username || draftName;
+  // What is actually shown/used: the user's edit if they've typed, otherwise the stored name
+  const nameValue = draftName ?? (hydrated ? username : "");
+  const effectiveName = nameValue || username;
 
   async function handleStart() {
     setError(null);
-    const finalName = (draftName || username).trim();
+    const finalName = nameValue.trim();
     if (!finalName) {
       setError("Pick a username to keep your scores.");
       return;
@@ -97,7 +100,7 @@ function HomePage() {
 
   async function handleDaily() {
     setError(null);
-    const finalName = (draftName || username).trim();
+    const finalName = nameValue.trim();
     if (finalName) {
       if (finalName.length > 24) {
         setError("Username must be 24 characters or fewer.");
@@ -117,7 +120,7 @@ function HomePage() {
 
   async function handleStreak() {
     setError(null);
-    const finalName = (draftName || username).trim();
+    const finalName = nameValue.trim();
     if (finalName) {
       if (finalName.length > 24) {
         setError("Username must be 24 characters or fewer.");
@@ -207,8 +210,8 @@ function HomePage() {
             <input
               type="text"
               maxLength={24}
-              placeholder={hydrated && username ? username : "e.g. Marty"}
-              value={draftName || (hydrated ? username : "")}
+              placeholder="e.g. Marty"
+              value={nameValue}
               onChange={(e) => setDraftName(e.target.value)}
               className="mt-2 w-full bg-input border border-border rounded-md px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
             />
