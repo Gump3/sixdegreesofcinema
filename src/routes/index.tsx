@@ -211,7 +211,7 @@ function HomePage() {
               type="text"
               maxLength={24}
               placeholder={hydrated && username ? username : "e.g. Marty"}
-              value={draftName || (hydrated ? username : "")}
+              value={nameValue}
               onChange={(e) => setDraftName(e.target.value)}
               className="mt-2 w-full bg-input border border-border rounded-md px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition"
             />
