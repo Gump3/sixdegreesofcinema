@@ -406,7 +406,7 @@ export async function getDailyChallenge() {
   let actorB: Person | null = null;
   let dailyPath: ChainStep[] | null = null;
 
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const ia = Math.floor(rand() * unique.length);
     let ib = Math.floor(rand() * unique.length);
     if (ib === ia) ib = (ib + 1) % unique.length;
@@ -416,8 +416,8 @@ export async function getDailyChallenge() {
     try {
       const path = await findShortestPath(a.id, b.id, {
         maxDepth: 4,
-        budgetMs: 18_000,
-        maxTmdbCalls: 400,
+        budgetMs: 10_000,
+        maxTmdbCalls: 250,
       });
       if (path && path.length) {
         actorA = a;
