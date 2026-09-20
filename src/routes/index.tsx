@@ -70,7 +70,7 @@ function HomePage() {
 
   async function handleStart() {
     setError(null);
-    const finalName = (draftName || username).trim();
+    const finalName = nameValue.trim();
     if (!finalName) {
       setError("Pick a username to keep your scores.");
       return;
@@ -100,7 +100,7 @@ function HomePage() {
 
   async function handleDaily() {
     setError(null);
-    const finalName = (draftName || username).trim();
+    const finalName = nameValue.trim();
     if (finalName) {
       if (finalName.length > 24) {
         setError("Username must be 24 characters or fewer.");
@@ -120,7 +120,7 @@ function HomePage() {
 
   async function handleStreak() {
     setError(null);
-    const finalName = (draftName || username).trim();
+    const finalName = nameValue.trim();
     if (finalName) {
       if (finalName.length > 24) {
         setError("Username must be 24 characters or fewer.");
