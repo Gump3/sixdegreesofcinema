@@ -390,14 +390,46 @@ export async function getDailyChallenge() {
   }
   if (pool.length < 2) throw new Error("TMDB unavailable for daily challenge.");
   const seen = new Set<number>();
-  const unique = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
+  const dedup = pool.filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)));
 
+  // Same quality gates as a normal game: drop low-profile people, then require
+  // an English Wikipedia article so TMDB-only names can never become endpoints.
+  const notable = dedup.filter((p) => isNotablePerson(p));
+  let unique: Person[] = await filterWithEnglishWikipedia(notable.length >= 2 ? notable : dedup);
+  if (unique.length < 2) unique = notable.length >= 2 ? notable : dedup;
+
+  // Deterministic candidate draw, but keep drawing until the pair is actually
+  // solvable within six degrees. A daily with no path is worse than a re-roll.
   const rand = mulberry32(seededInt(today));
-  const ia = Math.floor(rand() * unique.length);
-  let ib = Math.floor(rand() * unique.length);
-  if (ib === ia) ib = (ib + 1) % unique.length;
-  const actorA = unique[ia];
-  const actorB = unique[ib];
+  let actorA: Person | null = null;
+  let actorB: Person | null = null;
+  let dailyPath: ChainStep[] | null = null;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const ia = Math.floor(rand() * unique.length);
+    let ib = Math.floor(rand() * unique.length);
+    if (ib === ia) ib = (ib + 1) % unique.length;
+    const a = unique[ia];
+    const b = unique[ib];
+    if (!a || !b || a.id === b.id) continue;
+    try {
+      const path = await findShortestPath(a.id, b.id, {
+        maxDepth: 4,
+        budgetMs: 18_000,
+        maxTmdbCalls: 400,
+      });
+      if (path && path.length) {
+        actorA = a;
+        actorB = b;
+        dailyPath = path;
+        break;
+      }
+    } catch {
+      // treat as unsolvable and try the next seeded pair
+    }
+  }
+
+  if (!actorA || !actorB) throw new Error("Could not build a solvable daily challenge. Try again shortly.");
 
   const aRec = asActor(actorA);
   const bRec = asActor(actorB);
@@ -412,6 +444,7 @@ export async function getDailyChallenge() {
       mode: "noob",
       is_daily: true,
       daily_date: today,
+      shortest_path: (dailyPath ?? null) as never,
     })
     .select("id")
     .single();
